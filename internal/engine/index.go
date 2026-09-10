@@ -1,8 +1,10 @@
 package engine
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -296,4 +298,61 @@ func dedup(slice []string) []string {
 		}
 	}
 	return result
+}
+
+// AllDocuments returns a copy of all currently indexed documents.
+func (idx *InvertedIndex) AllDocuments() []Document {
+	idx.mu.RLock()
+	defer idx.mu.RUnlock()
+
+	docs := make([]Document, 0, len(idx.docs))
+	for _, doc := range idx.docs {
+		docs = append(docs, *doc)
+	}
+
+	// Sort deterministically by ID
+	sort.Slice(docs, func(i, j int) bool {
+		return docs[i].ID < docs[j].ID
+	})
+
+	return docs
+}
+
+// ExportJSON serializes all indexed documents to a clean formatted JSON file.
+func (idx *InvertedIndex) ExportJSON(outputPath string) error {
+	docs := idx.AllDocuments()
+	data, err := json.MarshalIndent(docs, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal index documents to JSON: %w", err)
+	}
+
+	if err := os.WriteFile(outputPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write index file %s: %w", outputPath, err)
+	}
+
+	return nil
+}
+
+// ImportJSON deserializes documents from a JSON file and indexes them.
+func (idx *InvertedIndex) ImportJSON(inputPath string) (int, error) {
+	data, err := os.ReadFile(inputPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to read index file %s: %w", inputPath, err)
+	}
+
+	var docs []Document
+	if err := json.Unmarshal(data, &docs); err != nil {
+		return 0, fmt.Errorf("failed to parse index JSON: %w", err)
+	}
+
+	count := 0
+	for _, doc := range docs {
+		if doc.ID == "" {
+			continue
+		}
+		idx.AddDocument(doc)
+		count++
+	}
+
+	return count, nil
 }

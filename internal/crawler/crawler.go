@@ -1,10 +1,18 @@
 package crawler
 
 import (
+	"context"
+	"fmt"
+	"html"
+	"io"
 	"io/fs"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/benzjeremy/search/internal/engine"
@@ -172,4 +180,178 @@ func IndexLocalDirectory(idx *engine.InvertedIndex, rootPath string) (int, error
 	})
 
 	return count, err
+}
+
+var (
+	titleRegex      = regexp.MustCompile(`(?i)<title[^>]*>([^<]+)</title>`)
+	metaDescRegex   = regexp.MustCompile(`(?i)<meta\s+[^>]*name=["']description["'][^>]*content=["']([^"']*)["']`)
+	metaOgDescRegex = regexp.MustCompile(`(?i)<meta\s+[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["']`)
+	scriptRegex     = regexp.MustCompile(`(?is)<script[^>]*>.*?</script>`)
+	styleRegex      = regexp.MustCompile(`(?is)<style[^>]*>.*?</style>`)
+	noscriptRegex   = regexp.MustCompile(`(?is)<noscript[^>]*>.*?</noscript>`)
+	navRegex        = regexp.MustCompile(`(?is)<nav[^>]*>.*?</nav>`)
+	footerRegex     = regexp.MustCompile(`(?is)<footer[^>]*>.*?</footer>`)
+	tagRegex        = regexp.MustCompile(`(?s)<[^>]+>`)
+	spaceRegex      = regexp.MustCompile(`\s+`)
+)
+
+// ExtractHTMLMetadata parses HTML text, returning Title, Description, and cleaned body content.
+func ExtractHTMLMetadata(rawHTML string) (title, description, cleanText string) {
+	// 1. Extract <title>
+	if matches := titleRegex.FindStringSubmatch(rawHTML); len(matches) > 1 {
+		title = strings.TrimSpace(html.UnescapeString(matches[1]))
+	}
+
+	// 2. Extract <meta description>
+	if matches := metaDescRegex.FindStringSubmatch(rawHTML); len(matches) > 1 {
+		description = strings.TrimSpace(html.UnescapeString(matches[1]))
+	} else if matches := metaOgDescRegex.FindStringSubmatch(rawHTML); len(matches) > 1 {
+		description = strings.TrimSpace(html.UnescapeString(matches[1]))
+	}
+
+	// 3. Strip non-content blocks (scripts, stylesheets, navigations, footers)
+	noCode := scriptRegex.ReplaceAllString(rawHTML, " ")
+	noCode = styleRegex.ReplaceAllString(noCode, " ")
+	noCode = noscriptRegex.ReplaceAllString(noCode, " ")
+	noCode = navRegex.ReplaceAllString(noCode, " ")
+	noCode = footerRegex.ReplaceAllString(noCode, " ")
+
+	// 4. Strip HTML tags
+	noTags := tagRegex.ReplaceAllString(noCode, " ")
+
+	// 5. Unescape HTML entities & normalize multiple whitespace/newlines
+	unescaped := html.UnescapeString(noTags)
+	cleanText = strings.TrimSpace(spaceRegex.ReplaceAllString(unescaped, " "))
+
+	return title, description, cleanText
+}
+
+// CrawlURL fetches a remote HTTP/HTTPS resource and transforms it into a searchable Document.
+func CrawlURL(ctx context.Context, targetURL string) (*engine.Document, error) {
+	parsedURL, err := url.Parse(targetURL)
+	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
+		return nil, fmt.Errorf("invalid web URL: %s", targetURL)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", targetURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; search-indexer/1.1; +https://benzjeremy.github.io/search/)")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+
+	client := &http.Client{
+		Timeout: 12 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("HTTP GET failed for %s: %w", targetURL, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d received for %s", resp.StatusCode, targetURL)
+	}
+
+	// Read up to 2 MB of HTML content to prevent memory exhaustion
+	limitReader := io.LimitReader(resp.Body, 2*1024*1024)
+	bodyBytes, err := io.ReadAll(limitReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body from %s: %w", targetURL, err)
+	}
+
+	title, desc, bodyText := ExtractHTMLMetadata(string(bodyBytes))
+	if title == "" {
+		title = parsedURL.Host + parsedURL.Path
+	}
+
+	// Limit body text to 100k characters for indexing efficiency
+	if len(bodyText) > 100000 {
+		bodyText = bodyText[:100000]
+	}
+
+	fullContent := title
+	if desc != "" {
+		fullContent += " — " + desc
+	}
+	if bodyText != "" {
+		fullContent += "\n" + bodyText
+	}
+
+	// Derive search tags from hostname and path
+	tags := []string{"web", parsedURL.Host}
+	segments := strings.Split(strings.Trim(parsedURL.Path, "/"), "/")
+	for _, seg := range segments {
+		cleanSeg := strings.ToLower(strings.TrimSpace(seg))
+		if cleanSeg != "" && len(cleanSeg) > 2 && len(cleanSeg) < 20 {
+			tags = append(tags, cleanSeg)
+		}
+	}
+
+	docID := strings.TrimPrefix(targetURL, "https://")
+	docID = strings.TrimPrefix(docID, "http://")
+	docID = strings.TrimRight(docID, "/")
+
+	return &engine.Document{
+		ID:        docID,
+		Title:     title,
+		URL:       targetURL,
+		Content:   fullContent,
+		Tags:      tags,
+		Source:    "web-crawler",
+		Timestamp: time.Now(),
+	}, nil
+}
+
+// CrawlWhitelist crawls a given set of URLs concurrently and returns all successfully extracted Documents.
+func CrawlWhitelist(ctx context.Context, urls []string) ([]engine.Document, error) {
+	var (
+		mu      sync.Mutex
+		results []engine.Document
+		wg      sync.WaitGroup
+		sem     = make(chan struct{}, 4) // Max 4 concurrent HTTP requests
+	)
+
+	for _, u := range urls {
+		target := strings.TrimSpace(u)
+		if target == "" {
+			continue
+		}
+
+		wg.Add(1)
+		go func(targetURL string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			doc, err := CrawlURL(ctx, targetURL)
+			if err != nil {
+				return
+			}
+
+			mu.Lock()
+			results = append(results, *doc)
+			mu.Unlock()
+		}(target)
+	}
+
+	wg.Wait()
+	return results, nil
+}
+
+// DefaultWhitelist returns curated official developer & project documentation URLs.
+func DefaultWhitelist() []string {
+	return []string{
+		"https://benzjeremy.github.io/",
+		"https://benzjeremy.github.io/untis-go/",
+		"https://benzjeremy.github.io/docklite/",
+		"https://benzjeremy.github.io/spotify-screensaver/",
+		"https://benzjeremy.github.io/wetter-site/",
+		"https://benzjeremy.github.io/search/",
+		"https://pkg.go.dev/",
+		"https://go.dev/doc/",
+		"https://open-meteo.com/",
+	}
 }

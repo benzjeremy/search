@@ -15,7 +15,7 @@ import (
 	"github.com/benzjeremy/search/internal/server"
 )
 
-const version = "v1.0"
+const version = "v1.1"
 
 func main() {
 	portFlag := flag.Int("port", 8080, "Port to listen on (strictly bound to 127.0.0.1)")
@@ -23,6 +23,10 @@ func main() {
 	queryFlag := flag.String("query", "", "Direct CLI search mode: query the index and exit")
 	tagFlag := flag.String("tag", "", "Optional tag filter for CLI search mode")
 	tokenFlag := flag.String("token", "", "Pre-shared API token for indexing mutations (auto-generated if empty)")
+	exportFlag := flag.String("export", "", "Export index documents to a JSON file (e.g. index.json)")
+	importFlag := flag.String("import", "", "Import precomputed index from a JSON file")
+	crawlURLFlag := flag.String("crawl-url", "", "Crawl a specific HTTP/HTTPS URL and index its content")
+	crawlWhitelistFlag := flag.Bool("crawl-whitelist", false, "Crawl official curated developer & project documentation URLs")
 	versionFlag := flag.Bool("version", false, "Print version information and exit")
 	flag.Parse()
 
@@ -39,7 +43,18 @@ func main() {
 		idx.AddDocument(doc)
 	}
 
-	// 2. Index local directory if specified
+	// 2. Import precomputed index if specified
+	if *importFlag != "" {
+		fmt.Printf("📥 Importing precomputed index from: %s ...\n", *importFlag)
+		count, err := idx.ImportJSON(*importFlag)
+		if err != nil {
+			log.Printf("⚠️ Warning during index import: %v\n", err)
+		} else {
+			fmt.Printf("✓ Imported %d documents from %s\n", count, *importFlag)
+		}
+	}
+
+	// 3. Index local directory if specified
 	if *dirFlag != "" {
 		fmt.Printf("📂 Crawling and indexing local directory: %s ...\n", *dirFlag)
 		count, err := crawler.IndexLocalDirectory(idx, *dirFlag)
@@ -50,7 +65,50 @@ func main() {
 		}
 	}
 
-	// 3. Direct CLI Search Mode
+	// 4. Crawl single web URL if specified
+	if *crawlURLFlag != "" {
+		fmt.Printf("🌐 Crawling web resource: %s ...\n", *crawlURLFlag)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		doc, err := crawler.CrawlURL(ctx, *crawlURLFlag)
+		cancel()
+		if err != nil {
+			log.Printf("⚠️ Warning during web crawl: %v\n", err)
+		} else {
+			idx.AddDocument(*doc)
+			fmt.Printf("✓ Successfully indexed %q (%s)\n", doc.Title, doc.URL)
+		}
+	}
+
+	// 5. Crawl curated whitelist if requested
+	if *crawlWhitelistFlag {
+		fmt.Println("🌐 Crawling official curated developer whitelist ...")
+		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+		docs, err := crawler.CrawlWhitelist(ctx, crawler.DefaultWhitelist())
+		cancel()
+		if err != nil {
+			log.Printf("⚠️ Warning during whitelist crawl: %v\n", err)
+		} else {
+			for _, doc := range docs {
+				idx.AddDocument(doc)
+			}
+			fmt.Printf("✓ Indexed %d web pages from curated whitelist\n", len(docs))
+		}
+	}
+
+	// 6. Export index to JSON file if specified
+	if *exportFlag != "" {
+		fmt.Printf("💾 Exporting full search index to: %s ...\n", *exportFlag)
+		if err := idx.ExportJSON(*exportFlag); err != nil {
+			log.Fatalf("Fatal error exporting index: %v", err)
+		}
+		stats := idx.Stats()
+		fmt.Printf("✓ Export complete! %d documents, %d terms written to %s\n", stats.TotalDocuments, stats.TotalTerms, *exportFlag)
+		if *queryFlag == "" {
+			os.Exit(0)
+		}
+	}
+
+	// 7. Direct CLI Search Mode
 	if *queryFlag != "" {
 		start := time.Now()
 		results := idx.Search(*queryFlag, *tagFlag, 10)
@@ -72,7 +130,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	// 4. Server Mode (Local-First HTTP Daemon)
+	// 8. Server Mode (Local-First HTTP Daemon)
 	srv := server.NewServer(idx, *portFlag, *tokenFlag)
 
 	stats := idx.Stats()

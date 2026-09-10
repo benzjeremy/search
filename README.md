@@ -4,7 +4,7 @@
 
 **High-Performance Inverted Full-Text Index · BM25 Ranking · Typo Tolerance · Local-First Daemon**
 
-[![Release](https://img.shields.io/badge/release-v1.0-38bdf8?style=flat-square)](https://github.com/benzjeremy/search/releases)
+[![Release](https://img.shields.io/badge/release-v1.1-38bdf8?style=flat-square)](https://github.com/benzjeremy/search/releases)
 [![Go Version](https://img.shields.io/badge/go-1.22+-00add8?style=flat-square&logo=go)](https://golang.org)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](https://github.com/benzjeremy/search/blob/main/LICENSE)
 [![Zero Telemetry](https://img.shields.io/badge/telemetry-zero-success?style=flat-square)](https://github.com/benzjeremy/search)
@@ -64,6 +64,15 @@ make build
 
 # Lokales Verzeichnis indizieren und durchsuchen
 ./bin/search -dir="/home/user/Dokumente" -query="rechnung"
+
+# Web-Ressource crawlen und direkt exportieren (v1.1)
+./bin/search -crawl-url="https://go.dev/doc/" -export="index.json"
+
+# Curated Whitelist crawlen und Index als JSON exportieren (v1.1)
+./bin/search -crawl-whitelist -export="index.json"
+
+# Vorkalkulierten Index importieren und durchsuchen (v1.1)
+./bin/search -import="index.json" -query="concurrency"
 ```
 
 ### 2. Als lokaler HTTP-Daemon starten

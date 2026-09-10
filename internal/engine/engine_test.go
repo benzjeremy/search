@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -99,5 +101,53 @@ func TestInvertedIndexBM25(t *testing.T) {
 	stats := idx.Stats()
 	if stats.TotalDocuments != 3 {
 		t.Errorf("Expected 3 documents in stats, got %d", stats.TotalDocuments)
+	}
+}
+
+func TestExportImportJSON(t *testing.T) {
+	idx := NewInvertedIndex()
+
+	doc := Document{
+		ID:        "doc-json-1",
+		Title:     "Zero-Dummy-Security Standards",
+		URL:       "https://benzjeremy.github.io/#standards",
+		Content:   "Vollständige AES-256-GCM Verschlüsselung und PBKDF2 Hashing ohne Dummy-Sicherheit.",
+		Tags:      []string{"security", "crypto"},
+		Source:    "test",
+		Timestamp: time.Now(),
+	}
+	idx.AddDocument(doc)
+
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test_index.json")
+
+	// Test Export
+	if err := idx.ExportJSON(tmpFile); err != nil {
+		t.Fatalf("ExportJSON failed: %v", err)
+	}
+
+	// Verify file exists
+	info, err := os.Stat(tmpFile)
+	if err != nil || info.Size() == 0 {
+		t.Fatalf("Expected non-empty exported JSON file, err: %v", err)
+	}
+
+	// Test Import into fresh index
+	freshIdx := NewInvertedIndex()
+	count, err := freshIdx.ImportJSON(tmpFile)
+	if err != nil {
+		t.Fatalf("ImportJSON failed: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("Expected 1 document imported, got %d", count)
+	}
+
+	// Verify search works on imported index
+	results := freshIdx.Search("aes-256-gcm", "", 5)
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 search result after import, got %d", len(results))
+	}
+	if results[0].Document.ID != "doc-json-1" {
+		t.Errorf("Expected doc-json-1, got %s", results[0].Document.ID)
 	}
 }
