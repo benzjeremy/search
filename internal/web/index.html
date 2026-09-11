@@ -106,58 +106,6 @@
         <div class="suggestions-dropdown" id="suggestions-dropdown" style="display:none;"></div>
       </div>
 
-      <!-- Primary Action Buttons -->
-      <div class="search-buttons">
-        <button type="button" id="btn-search-web" class="btn-search-primary" data-lang-de="Web durchsuchen" data-lang-en="Search the Web">
-          Web durchsuchen
-        </button>
-        <button type="button" id="btn-search-lucky" class="btn-search-secondary" data-lang-de="Ökosystem durchsuchen" data-lang-en="Search Ecosystem">
-          Ökosystem durchsuchen
-        </button>
-      </div>
-
-      <!-- 1-Click External Web Fallbacks -->
-      <div class="web-fallbacks">
-        <span class="fallbacks-label" data-lang-de="Im Web suchen:" data-lang-en="Search directly on:">Im Web suchen:</span>
-        <div class="fallback-chips">
-          <a href="#" class="fallback-chip" data-engine="google" target="_blank" rel="noopener noreferrer" title="Auf Google suchen">Google ↗</a>
-          <a href="#" class="fallback-chip" data-engine="duckduckgo" target="_blank" rel="noopener noreferrer" title="Auf DuckDuckGo suchen">DuckDuckGo ↗</a>
-          <a href="#" class="fallback-chip" data-engine="startpage" target="_blank" rel="noopener noreferrer" title="Auf Startpage suchen">Startpage ↗</a>
-          <a href="#" class="fallback-chip" data-engine="brave" target="_blank" rel="noopener noreferrer" title="Auf Brave Search suchen">Brave ↗</a>
-          <a href="#" class="fallback-chip" data-engine="wikipedia" target="_blank" rel="noopener noreferrer" title="Auf Wikipedia suchen">Wikipedia ↗</a>
-          <a href="#" class="fallback-chip" data-engine="github" target="_blank" rel="noopener noreferrer" title="Auf GitHub suchen">GitHub ↗</a>
-        </div>
-      </div>
-
-      <!-- Search Category & Scope Tabs -->
-      <div class="category-tabs" role="tablist">
-        <button type="button" class="category-tab active" data-tab="all" role="tab" aria-selected="true" data-lang-de="Alle Treffer" data-lang-en="All Results">
-          Alle Treffer
-        </button>
-        <button type="button" class="category-tab" data-tab="web" role="tab" aria-selected="false" data-lang-de="Web &amp; Wissen" data-lang-en="Web &amp; Knowledge">
-          Web &amp; Wissen
-        </button>
-        <button type="button" class="category-tab" data-tab="ecosystem" role="tab" aria-selected="false" data-lang-de="Jeremy Benz Ökosystem" data-lang-en="Jeremy Benz Ecosystem">
-          Jeremy Benz Ökosystem
-        </button>
-        <button type="button" class="category-tab" data-tab="news" role="tab" aria-selected="false" data-lang-de="Tech &amp; News (HN)" data-lang-en="Tech &amp; News (HN)">
-          Tech &amp; News (HN)
-        </button>
-        <button type="button" class="category-tab" data-tab="bookmarks" role="tab" aria-selected="false" data-lang-de="🔒 Private Lesezeichen" data-lang-en="🔒 Private Bookmarks">
-          🔒 Private Lesezeichen
-        </button>
-      </div>
-
-      <!-- Quick query tags -->
-      <div class="quick-tags">
-        <span class="quick-tags-label" data-lang-de="Beliebt:" data-lang-en="Trending:">Beliebt:</span>
-        <button type="button" class="quick-tag-btn" data-q="docklite">docklite</button>
-        <button type="button" class="quick-tag-btn" data-q="untis-go">untis-go</button>
-        <button type="button" class="quick-tag-btn" data-q="golang">golang</button>
-        <button type="button" class="quick-tag-btn" data-q="wikipedia">wikipedia</button>
-        <button type="button" class="quick-tag-btn" data-q="privacy">privacy</button>
-        <button type="button" class="quick-tag-btn" data-q="sqlite">sqlite</button>
-      </div>
     </section>
 
     <!-- Results Section -->
@@ -168,13 +116,11 @@
           <span id="results-count" data-lang-de="Lade Suchindex..." data-lang-en="Loading search index...">Lade Suchindex...</span>
           <span class="status-latency" id="results-latency">⚡ 0.00 ms</span>
         </div>
-        <div class="status-right" id="private-actions-bar" style="display:none;">
-          <button type="button" id="btn-add-bookmark" class="btn-sm-action" data-lang-de="＋ Lesezeichen hinzufügen" data-lang-en="＋ Add Bookmark">
-            ＋ Lesezeichen hinzufügen
-          </button>
-          <button type="button" id="btn-sync-bookmarks" class="btn-sm-action" data-lang-de="💾 Backup (JSON)" data-lang-en="💾 Backup (JSON)">
-            💾 Backup (JSON)
-          </button>
+        <div class="status-right" id="status-right-bar">
+          <span class="web-fallback-note" data-lang-de="Websuche:" data-lang-en="Web Search:">Websuche:</span>
+          <a href="#" class="fallback-quick-link" id="fb-google" target="_blank" rel="noopener noreferrer">Google ↗</a>
+          <a href="#" class="fallback-quick-link" id="fb-ddg" target="_blank" rel="noopener noreferrer">DuckDuckGo ↗</a>
+          <a href="#" class="fallback-quick-link" id="fb-startpage" target="_blank" rel="noopener noreferrer">Startpage ↗</a>
         </div>
       </div>
 
@@ -355,8 +301,16 @@
               <div class="setting-desc" data-lang-de="Entfernt utm_source, utm_campaign, fbclid, gclid und Referral-Tags vor dem Öffnen." data-lang-en="Removes utm_source, utm_campaign, fbclid, gclid and referral tags before opening.">
                 Entfernt utm_source, utm_campaign, fbclid, gclid und Referral-Tags vor dem Öffnen.
               </div>
-            </div>
-          </label>
+        <!-- Private Bookmarks Management -->
+        <div class="settings-group">
+          <h4 class="settings-group-title" data-lang-de="Private Lesezeichen (IndexedDB)" data-lang-en="Private Bookmarks (IndexedDB)">Private Lesezeichen (IndexedDB)</h4>
+          <p class="setting-desc" style="margin-bottom: 12px;" data-lang-de="Lesezeichen werden 100% lokal in deinem Browser gespeichert." data-lang-en="Bookmarks are saved 100% locally inside your browser.">
+            Lesezeichen werden 100% lokal in deinem Browser gespeichert.
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="btn-cancel" id="btn-add-bookmark" data-lang-de="＋ Lesezeichen anlegen" data-lang-en="＋ New Bookmark">＋ Lesezeichen anlegen</button>
+            <button type="button" class="btn-cancel" id="btn-sync-bookmarks" data-lang-de="💾 Backup Export / Import" data-lang-en="💾 Backup Export / Import">💾 Backup Export / Import</button>
+          </div>
         </div>
       </div>
 

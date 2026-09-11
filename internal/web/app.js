@@ -1,8 +1,9 @@
 /**
- * search — Genuine Open-Source Web & Ecosystem Search Engine
+ * search — Genuine Open-Source Global Web Search Engine
  * 100% Client-Side on GitHub Pages | Zero Telemetry | Pure Vanilla JS
- * Combines Okapi BM25 ranking, Wikipedia Knowledge Cards, DuckDuckGo answers,
- * Hacker News tech index, URL tracking sanitizer, and private IndexedDB bookmarks.
+ * Searches millions of websites worldwide via federated APIs (Wikipedia Full Search,
+ * DuckDuckGo Instant Topics, Hacker News Algolia, OpenStreetMap, Brave API) +
+ * In-Memory Okapi BM25 Index over curated global knowledge & Jeremy Benz Ecosystem.
  * Author: Jeremy Benz (@benzjeremy)
  */
 
@@ -75,13 +76,20 @@
     }
   }
 
+  function stripWikiSnippet(snippet) {
+    if (!snippet) return '';
+    let s = snippet.replace(/<span class="searchmatch">([\s\S]*?)<\/span>/gi, '<mark>$1</mark>');
+    s = s.replace(/<(?!\/?mark\b)[^>]*>/gi, '');
+    return s.trim();
+  }
+
   // --- Client-Side Okapi BM25 Search Engine ---
   class ClientBM25Engine {
     constructor(k1 = 1.2, b = 0.75) {
       this.k1 = k1;
       this.b = b;
       this.docs = [];
-      this.index = new Map(); // term -> Map(docIndex -> count)
+      this.index = new Map();
       this.docLengths = [];
       this.avgdl = 0;
     }
@@ -110,7 +118,7 @@
       this.avgdl = corpus.length > 0 ? totalTokens / corpus.length : 1;
     }
 
-    search(query, categoryFilter = '') {
+    search(query) {
       const qTokens = tokenize(query);
       if (qTokens.length === 0) {
         return this.docs
@@ -118,18 +126,15 @@
             doc,
             score: doc.category === 'ecosystem' ? 2.0 : 1.0,
             snippet: doc.content ? doc.content.slice(0, 160) + '...' : ''
-          }))
-          .filter(item => !categoryFilter || item.doc.category === categoryFilter);
+          }));
       }
 
       const N = this.docs.length;
       const scores = new Map();
-      const matchMap = new Map();
 
       qTokens.forEach(qTerm => {
         let postings = this.index.get(qTerm);
 
-        // Prefix and typo fallback
         if (!postings) {
           for (let [term, p] of this.index.entries()) {
             if (term.startsWith(qTerm) || (qTerm.length >= 4 && levenshtein(qTerm, term) <= 1)) {
@@ -147,34 +152,22 @@
 
         for (let [docIdx, tf] of postings.entries()) {
           const doc = this.docs[docIdx];
-          if (categoryFilter && doc.category !== categoryFilter) {
-            continue;
-          }
-
           const docLen = this.docLengths[docIdx];
           const numerator = tf * (this.k1 + 1);
           const denominator = tf + this.k1 * (1 - this.b + this.b * (docLen / this.avgdl));
           let termScore = safeIDF * (numerator / denominator);
 
-          // Boost if title matches
           if (doc.title && doc.title.toLowerCase().includes(qTerm)) {
-            termScore *= 2.5;
+            termScore *= 2.8;
           }
-
-          // Boost if tag matches
           if (doc.tags && doc.tags.some(t => t.toLowerCase() === qTerm)) {
-            termScore *= 1.8;
+            termScore *= 2.0;
           }
-
-          // Boost Jeremy Benz Ecosystem projects
           if (doc.category === 'ecosystem') {
-            termScore *= 1.4;
+            termScore *= 1.6;
           }
 
           scores.set(docIdx, (scores.get(docIdx) || 0) + termScore);
-
-          if (!matchMap.has(docIdx)) matchMap.set(docIdx, new Set());
-          matchMap.get(docIdx).add(qTerm);
         }
       });
 
@@ -192,12 +185,11 @@
       return results;
     }
 
-    suggest(prefix, limit = 6) {
+    suggest(prefix, limit = 5) {
       if (!prefix) return [];
       const p = prefix.toLowerCase().trim();
       const suggestions = new Set();
 
-      // Check document titles
       for (const doc of this.docs) {
         if (doc.title && doc.title.toLowerCase().includes(p)) {
           suggestions.add(doc.title.split('—')[0].trim());
@@ -205,19 +197,6 @@
         }
       }
 
-      // Check tags
-      for (const doc of this.docs) {
-        if (doc.tags) {
-          for (const tag of doc.tags) {
-            if (tag.toLowerCase().startsWith(p)) {
-              suggestions.add(tag);
-              if (suggestions.size >= limit) return Array.from(suggestions);
-            }
-          }
-        }
-      }
-
-      // Check indexed terms
       for (const term of this.index.keys()) {
         if (term.startsWith(p) && term.length > p.length) {
           suggestions.add(term);
@@ -310,11 +289,10 @@
     });
   }
 
-  // --- State & Settings Management ---
+  // --- State & Settings ---
   const state = {
     engine: new ClientBM25Engine(),
     databaseLoaded: false,
-    activeTab: 'all', // all, web, ecosystem, news, bookmarks
     lang: localStorage.getItem('search_lang') || 'de',
     theme: localStorage.getItem('search_theme') || 'dark',
     bookmarks: [],
@@ -329,12 +307,65 @@
     liveCache: new Map()
   };
 
-  // --- External Live Web Search APIs ---
+  // --- Federated Global Web Search APIs ---
 
-  // 1. Wikipedia Summary API (CORS friendly)
+  // 1. Wikipedia Full-Text Search API (Searches tens of millions of global pages with CORS origin=*)
+  async function fetchWikipediaFull(query, lang = 'de') {
+    if (!state.settings.srcWiki || !query) return [];
+    const cacheKey = `wikifull_${lang}_${query.toLowerCase()}`;
+    if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
+
+    try {
+      const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=15&utf8=&format=json&origin=*`;
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.query || !Array.isArray(data.query.search)) return [];
+
+      let hits = data.query.search.map(hit => ({
+        title: hit.title,
+        url: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, '_'))}`,
+        content: stripWikiSnippet(hit.snippet),
+        category: 'web',
+        badge: 'Wikipedia',
+        source: 'Wikipedia',
+        isPreHighlighted: true
+      }));
+
+      // If German search yields few hits, query English Wikipedia as well for worldwide coverage
+      if (lang === 'de' && hits.length < 5) {
+        try {
+          const enUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=8&utf8=&format=json&origin=*`;
+          const enRes = await fetch(enUrl);
+          if (enRes.ok) {
+            const enData = await enRes.json();
+            if (enData.query && Array.isArray(enData.query.search)) {
+              const enHits = enData.query.search.map(hit => ({
+                title: hit.title,
+                url: `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, '_'))}`,
+                content: stripWikiSnippet(hit.snippet),
+                category: 'web',
+                badge: 'Wikipedia EN',
+                source: 'Wikipedia',
+                isPreHighlighted: true
+              }));
+              hits.push(...enHits);
+            }
+          }
+        } catch (e) {}
+      }
+
+      state.liveCache.set(cacheKey, hits);
+      return hits;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 2. Wikipedia Summary API (For the Knowledge Sidebar)
   async function fetchWikipediaCard(query, lang = 'de') {
     if (!state.settings.srcWiki || !query) return null;
-    const cacheKey = `wiki_${lang}_${query.toLowerCase()}`;
+    const cacheKey = `wiki_card_${lang}_${query.toLowerCase()}`;
     if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
 
     try {
@@ -361,7 +392,7 @@
     }
   }
 
-  // 2. DuckDuckGo Instant Answer API
+  // 3. DuckDuckGo Instant Answers & Deep Topics
   async function fetchDuckDuckGo(query) {
     if (!state.settings.srcDDG || !query) return { card: null, items: [] };
     const cacheKey = `ddg_${query.toLowerCase()}`;
@@ -387,7 +418,7 @@
 
       const items = [];
       if (Array.isArray(data.RelatedTopics)) {
-        data.RelatedTopics.slice(0, 5).forEach(topic => {
+        data.RelatedTopics.slice(0, 8).forEach(topic => {
           if (topic.Text && topic.FirstURL) {
             const parts = topic.Text.split(' - ');
             items.push({
@@ -396,8 +427,8 @@
               content: topic.Text,
               source: 'DuckDuckGo',
               category: 'web',
-              badge: 'DuckDuckGo',
-              tags: ['web', 'instant']
+              badge: 'DuckDuckGo Web',
+              tags: ['web']
             });
           }
         });
@@ -411,14 +442,14 @@
     }
   }
 
-  // 3. Hacker News Algolia Search API (CORS friendly)
+  // 4. Hacker News Algolia Web Search API
   async function fetchHackerNews(query) {
     if (!state.settings.srcHN || !query) return [];
     const cacheKey = `hn_${query.toLowerCase()}`;
     if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
 
     try {
-      const endpoint = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(query)}&hitsPerPage=6`;
+      const endpoint = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(query)}&hitsPerPage=8`;
       const res = await fetch(endpoint);
       if (!res.ok) return [];
       const data = await res.json();
@@ -433,9 +464,9 @@
             url: sanitizeURL(targetUrl),
             content: `Hacker News Diskussion von @${hit.author || 'dev'} · ${hit.points || 0} Punkte · ${hit.num_comments || 0} Kommentare`,
             source: 'Hacker News',
-            category: 'news',
+            category: 'web',
             badge: 'Hacker News',
-            tags: ['tech', 'news', 'hacker-news']
+            tags: ['tech', 'news']
           });
         });
       }
@@ -447,11 +478,37 @@
     }
   }
 
-  // 4. Brave Search API (If user provided custom API key)
+  // 5. OpenStreetMap Nominatim for Places & Cities
+  async function fetchOpenStreetMap(query) {
+    if (!query || query.length < 3) return [];
+    try {
+      const endpoint = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=2`;
+      const res = await fetch(endpoint, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!Array.isArray(data)) return [];
+
+      return data.map(item => ({
+        title: item.display_name.split(',')[0] + ' (Karte & Standort)',
+        url: `https://www.openstreetmap.org/?mlat=${item.lat}&mlon=${item.lon}#map=14/${item.lat}/${item.lon}`,
+        content: `Standort auf OpenStreetMap: ${item.display_name} (Typ: ${item.type || 'Ort'})`,
+        source: 'OpenStreetMap',
+        category: 'web',
+        badge: 'OpenStreetMap',
+        tags: ['karte', 'ort', 'geo']
+      }));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 6. Brave Search API (If user provided custom API key)
   async function fetchBraveSearch(query) {
     if (!state.settings.braveKey || !query) return [];
     try {
-      const endpoint = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=6`;
+      const endpoint = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=8`;
       const res = await fetch(endpoint, {
         headers: {
           'Accept': 'application/json',
@@ -469,7 +526,7 @@
             content: r.description,
             source: 'Brave Search',
             category: 'web',
-            badge: 'Brave',
+            badge: 'Brave Web',
             tags: ['web']
           });
         });
@@ -480,6 +537,7 @@
     }
   }
 
+  // --- Initial Database & Bookmarks Loader ---
   const DEFAULT_CORPUS = [
     {
       id: 'root-hub',
@@ -528,11 +586,8 @@
     }
   ];
 
-  // --- Initial Database & Bookmarks Loader ---
   async function loadDatabase() {
-    // Immediately index default corpus so search works with 0 ms latency
     reindexAll(DEFAULT_CORPUS);
-
     try {
       const res = await fetch('database.json');
       if (res.ok) {
@@ -541,7 +596,7 @@
         state.databaseLoaded = true;
       }
     } catch (e) {
-      console.warn('Could not load database.json, using default corpus:', e);
+      console.warn('Using embedded default corpus:', e);
     }
   }
 
@@ -599,23 +654,20 @@
       btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
     });
 
-    // Update all text nodes with data-lang attributes
     document.querySelectorAll('[data-lang-de]').forEach(el => {
       const txt = lang === 'de' ? el.getAttribute('data-lang-de') : el.getAttribute('data-lang-en');
       if (txt) el.innerHTML = txt;
     });
 
-    // Update placeholders
     document.querySelectorAll('[data-placeholder-de]').forEach(el => {
       const ph = lang === 'de' ? el.getAttribute('data-placeholder-de') : el.getAttribute('data-placeholder-en');
       if (ph) el.setAttribute('placeholder', ph);
     });
 
-    // Re-render search if input has value
     executeSearch();
   };
 
-  // Execute Search Aggregator
+  // --- Primary Search Aggregator ---
   async function executeSearch() {
     const input = document.getElementById('search-input');
     const query = input ? input.value.trim() : '';
@@ -634,25 +686,32 @@
 
     const startTime = performance.now();
 
-    // 1. In-memory BM25 query over database.json and bookmarks
-    const localHits = state.engine.search(query, state.activeTab === 'all' ? '' : state.activeTab);
+    // 1. Query local in-memory BM25 index over database.json + bookmarks
+    const localHits = state.engine.search(query);
 
-    // 2. If online and searching web/news/all, fetch live federated sources
+    // 2. Query global live web sources simultaneously
     let liveCard = null;
     let liveWebItems = [];
 
-    if (query && state.activeTab !== 'bookmarks' && state.activeTab !== 'ecosystem') {
-      const [wikiCard, ddgResult, hnItems, braveItems] = await Promise.all([
-        fetchWikipediaCard(query, state.lang),
+    if (query) {
+      const [wikiFull, ddgResult, hnItems, osmItems, braveItems] = await Promise.all([
+        fetchWikipediaFull(query, state.lang),
         fetchDuckDuckGo(query),
         fetchHackerNews(query),
+        fetchOpenStreetMap(query),
         fetchBraveSearch(query)
       ]);
 
-      liveCard = wikiCard || (ddgResult ? ddgResult.card : null);
+      if (wikiFull && wikiFull.length) liveWebItems.push(...wikiFull);
       if (ddgResult && ddgResult.items) liveWebItems.push(...ddgResult.items);
       if (hnItems && hnItems.length) liveWebItems.push(...hnItems);
+      if (osmItems && osmItems.length) liveWebItems.push(...osmItems);
       if (braveItems && braveItems.length) liveWebItems.push(...braveItems);
+
+      // Top entity knowledge card from Wikipedia
+      const topEntity = (wikiFull && wikiFull.length > 0) ? wikiFull[0].title : query;
+      const card = await fetchWikipediaCard(topEntity, state.lang);
+      liveCard = card || (ddgResult ? ddgResult.card : null);
     }
 
     const elapsed = performance.now() - startTime;
@@ -677,11 +736,11 @@
       knowledgeSidebar.style.display = 'none';
     }
 
-    // Combine results
+    // Combine and deduplicate
     const combined = [];
     const seenURLs = new Set();
 
-    // Add local hits
+    // 1. Ecosystem hits & curated DB hits
     localHits.forEach(hit => {
       const cleanU = sanitizeURL(hit.doc.url);
       if (!seenURLs.has(cleanU)) {
@@ -694,12 +753,12 @@
           badge: hit.doc.isBookmark ? 'Lesezeichen' : (hit.doc.category === 'ecosystem' ? 'Jeremy Benz Ökosystem' : 'Web Index'),
           isBookmark: hit.doc.isBookmark,
           rawBM: hit.doc.rawBM,
-          score: hit.score
+          isPreHighlighted: false
         });
       }
     });
 
-    // Add live web hits
+    // 2. Global Live Web hits
     liveWebItems.forEach(item => {
       const cleanU = sanitizeURL(item.url);
       if (!seenURLs.has(cleanU)) {
@@ -708,39 +767,30 @@
           title: item.title,
           url: cleanU,
           content: item.content,
-          category: item.category,
+          category: 'web',
           badge: item.badge || 'Web',
-          isBookmark: false
+          isBookmark: false,
+          isPreHighlighted: Boolean(item.isPreHighlighted)
         });
       }
     });
 
-    // Filter by active tab if specific
-    const filtered = combined.filter(item => {
-      if (state.activeTab === 'all') return true;
-      if (state.activeTab === 'web') return item.category === 'web';
-      if (state.activeTab === 'ecosystem') return item.category === 'ecosystem';
-      if (state.activeTab === 'news') return item.category === 'news';
-      if (state.activeTab === 'bookmarks') return item.isBookmark;
-      return true;
-    });
-
     if (countBadge) {
       countBadge.textContent = state.lang === 'de' 
-        ? `${filtered.length} Ergebnisse gefunden` 
-        : `${filtered.length} results found`;
+        ? `${combined.length} Ergebnisse im Web gefunden` 
+        : `${combined.length} web results found`;
     }
 
     if (!resultsContainer) return;
 
-    if (filtered.length === 0) {
+    if (combined.length === 0) {
       resultsContainer.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">🔍</div>
           <h3>${state.lang === 'de' ? 'Keine Treffer gefunden' : 'No results found'}</h3>
           <p>${state.lang === 'de' 
-            ? `Für die Abfrage <code>${escapeHTML(query)}</code> wurden keine Treffer ermittelt. Probiere die 1-Click Fallbacks zu Google oder DuckDuckGo oben aus.`
-            : `No matching items found for <code>${escapeHTML(query)}</code>. Try one of the 1-click search fallbacks above.`}
+            ? `Für die Abfrage <code>${escapeHTML(query)}</code> wurden keine Treffer ermittelt. Probiere den Google- oder DuckDuckGo-Direktlink oben rechts aus.`
+            : `No matching items found for <code>${escapeHTML(query)}</code>. Try one of the direct search links above.`}
           </p>
         </div>
       `;
@@ -749,14 +799,14 @@
 
     const qTokens = tokenize(query);
 
-    resultsContainer.innerHTML = filtered.map(item => {
-      const highlightedSnippet = highlightSnippet(item.content, qTokens);
+    resultsContainer.innerHTML = combined.map(item => {
+      const snippetHTML = item.isPreHighlighted ? item.content : highlightSnippet(item.content, qTokens);
       const badgeClass = getBadgeClass(item.badge);
       const domain = getDomain(item.url);
 
       const bookmarkAction = item.isBookmark
         ? `<button type="button" class="result-action-btn btn-del-bm" data-bmid="${item.rawBM.id}">🗑️ ${state.lang === 'de' ? 'Löschen' : 'Delete'}</button>`
-        : `<button type="button" class="result-action-btn btn-save-bm" data-title="${escapeHTML(item.title)}" data-url="${escapeHTML(item.url)}">⭐ ${state.lang === 'de' ? 'Als Lesezeichen' : 'Bookmark'}</button>`;
+        : `<button type="button" class="result-action-btn btn-save-bm" data-title="${escapeHTML(item.title)}" data-url="${escapeHTML(item.url)}">⭐ ${state.lang === 'de' ? 'Lesezeichen' : 'Bookmark'}</button>`;
 
       return `
         <article class="result-item">
@@ -767,7 +817,7 @@
           <a href="${escapeHTML(item.url)}" class="result-title" target="_blank" rel="noopener noreferrer">
             ${escapeHTML(item.title)}
           </a>
-          <p class="result-snippet">${highlightedSnippet}</p>
+          <p class="result-snippet">${snippetHTML}</p>
           <div class="result-actions">
             ${bookmarkAction}
             <button type="button" class="result-action-btn btn-copy-url" data-url="${escapeHTML(item.url)}">📋 ${state.lang === 'de' ? 'Link kopieren' : 'Copy link'}</button>
@@ -823,56 +873,65 @@
 
   function updateFallbackLinks(query) {
     const q = query ? encodeURIComponent(query) : '';
-    document.querySelectorAll('.fallback-chip').forEach(chip => {
-      const engine = chip.getAttribute('data-engine');
-      switch (engine) {
-        case 'google':
-          chip.href = q ? `https://www.google.com/search?q=${q}` : 'https://www.google.com/';
-          break;
-        case 'duckduckgo':
-          chip.href = q ? `https://duckduckgo.com/?q=${q}` : 'https://duckduckgo.com/';
-          break;
-        case 'startpage':
-          chip.href = q ? `https://www.startpage.com/sp/search?query=${q}` : 'https://www.startpage.com/';
-          break;
-        case 'brave':
-          chip.href = q ? `https://search.brave.com/search?q=${q}` : 'https://search.brave.com/';
-          break;
-        case 'wikipedia':
-          chip.href = q ? `https://${state.lang}.wikipedia.org/w/index.php?search=${q}` : `https://${state.lang}.wikipedia.org/`;
-          break;
-        case 'github':
-          chip.href = q ? `https://github.com/search?q=${q}` : 'https://github.com/';
-          break;
-      }
-    });
+    const fbGoogle = document.getElementById('fb-google');
+    const fbDDG = document.getElementById('fb-ddg');
+    const fbStartpage = document.getElementById('fb-startpage');
+
+    if (fbGoogle) fbGoogle.href = q ? `https://www.google.com/search?q=${q}` : 'https://www.google.com/';
+    if (fbDDG) fbDDG.href = q ? `https://duckduckgo.com/?q=${q}` : 'https://duckduckgo.com/';
+    if (fbStartpage) fbStartpage.href = q ? `https://www.startpage.com/sp/search?query=${q}` : 'https://www.startpage.com/';
   }
 
-  // --- Autocomplete Suggestions ---
+  // --- Autocomplete with Live Wikipedia OpenSearch ---
+  async function fetchLiveSuggestions(prefix, lang = 'de') {
+    if (!prefix || prefix.length < 2) return [];
+    try {
+      const url = `https://${lang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(prefix)}&limit=6&namespace=0&format=json&origin=*`;
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[1])) {
+        return data[1];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   function initSuggestions() {
     const input = document.getElementById('search-input');
     const dropdown = document.getElementById('suggestions-dropdown');
     if (!input || !dropdown) return;
 
+    let acTimer = null;
+
     input.addEventListener('input', () => {
+      clearTimeout(acTimer);
       const val = input.value.trim();
       if (!val) {
         dropdown.style.display = 'none';
         return;
       }
-      const suggestions = state.engine.suggest(val, 5);
-      if (suggestions.length === 0) {
-        dropdown.style.display = 'none';
-        return;
-      }
 
-      dropdown.innerHTML = suggestions.map(s => `
-        <div class="suggestion-item" data-val="${escapeHTML(s)}">
-          <svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <span>${escapeHTML(s)}</span>
-        </div>
-      `).join('');
-      dropdown.style.display = 'block';
+      acTimer = setTimeout(async () => {
+        const localSuggestions = state.engine.suggest(val, 4);
+        const liveSuggestions = await fetchLiveSuggestions(val, state.lang);
+        const combined = Array.from(new Set([...localSuggestions, ...liveSuggestions])).slice(0, 6);
+
+        if (combined.length === 0) {
+          dropdown.style.display = 'none';
+          return;
+        }
+
+        dropdown.innerHTML = combined.map(s => `
+          <div class="suggestion-item" data-val="${escapeHTML(s)}">
+            <svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>${escapeHTML(s)}</span>
+          </div>
+        `).join('');
+        dropdown.style.display = 'block';
+      }, 100);
     });
 
     dropdown.addEventListener('click', (e) => {
@@ -896,11 +955,8 @@
   function initEvents() {
     const input = document.getElementById('search-input');
     const clearBtn = document.getElementById('search-clear');
-    const btnSearchWeb = document.getElementById('btn-search-web');
-    const btnSearchLucky = document.getElementById('btn-search-lucky');
     const themeBtn = document.getElementById('btn-theme-toggle');
 
-    // Debounced search input
     let debounceTimer = null;
     if (input) {
       input.addEventListener('input', () => {
@@ -913,7 +969,8 @@
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           clearTimeout(debounceTimer);
-          document.getElementById('suggestions-dropdown').style.display = 'none';
+          const dd = document.getElementById('suggestions-dropdown');
+          if (dd) dd.style.display = 'none';
           executeSearch();
         }
       });
@@ -923,24 +980,9 @@
       clearBtn.addEventListener('click', () => {
         input.value = '';
         clearBtn.style.display = 'none';
-        document.getElementById('suggestions-dropdown').style.display = 'none';
+        const dd = document.getElementById('suggestions-dropdown');
+        if (dd) dd.style.display = 'none';
         input.focus();
-        executeSearch();
-      });
-    }
-
-    if (btnSearchWeb && input) {
-      btnSearchWeb.addEventListener('click', () => {
-        executeSearch();
-      });
-    }
-
-    if (btnSearchLucky && input) {
-      btnSearchLucky.addEventListener('click', () => {
-        state.activeTab = 'ecosystem';
-        document.querySelectorAll('.category-tab').forEach(t => {
-          t.classList.toggle('active', t.getAttribute('data-tab') === 'ecosystem');
-        });
         executeSearch();
       });
     }
@@ -954,33 +996,6 @@
       });
     }
 
-    // Category Tabs
-    document.querySelectorAll('.category-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        state.activeTab = tab.getAttribute('data-tab');
-
-        const privateBar = document.getElementById('private-actions-bar');
-        if (privateBar) {
-          privateBar.style.display = state.activeTab === 'bookmarks' ? 'flex' : 'none';
-        }
-
-        executeSearch();
-      });
-    });
-
-    // Quick tag buttons
-    document.querySelectorAll('.quick-tag-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (input) {
-          input.value = btn.getAttribute('data-q');
-          input.focus();
-          executeSearch();
-        }
-      });
-    });
-
     // Keyboard Shortcuts (/ or Ctrl+K to search)
     window.addEventListener('keydown', (e) => {
       if ((e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) && document.activeElement !== input) {
@@ -989,12 +1004,13 @@
         input.select();
       } else if (e.key === 'Escape') {
         if (document.activeElement === input) input.blur();
-        document.getElementById('suggestions-dropdown').style.display = 'none';
+        const dd = document.getElementById('suggestions-dropdown');
+        if (dd) dd.style.display = 'none';
         closeAllModals();
       }
     });
 
-    // Results Click Delegation (Bookmark, Copy Link, Delete)
+    // Results Click Delegation
     const resultsContainer = document.getElementById('search-results');
     if (resultsContainer) {
       resultsContainer.addEventListener('click', async (e) => {
@@ -1009,7 +1025,7 @@
           return;
         }
 
-        // Save as bookmark
+        // Save bookmark
         const saveBmBtn = e.target.closest('.btn-save-bm');
         if (saveBmBtn) {
           const title = saveBmBtn.getAttribute('data-title');
@@ -1025,7 +1041,7 @@
           await idbSaveBookmark(bm);
           await loadBookmarks();
           saveBmBtn.textContent = state.lang === 'de' ? '✓ Gespeichert!' : '✓ Saved!';
-          setTimeout(() => { saveBmBtn.textContent = state.lang === 'de' ? '⭐ Als Lesezeichen' : '⭐ Bookmark'; }, 2000);
+          setTimeout(() => { saveBmBtn.textContent = state.lang === 'de' ? '⭐ Lesezeichen' : '⭐ Bookmark'; }, 2000);
           return;
         }
 
@@ -1042,13 +1058,8 @@
       });
     }
 
-    // Settings Modal
     initSettingsModal();
-
-    // Bookmarks Modal
     initBookmarksModals();
-
-    // Mobile Navigation Drawer
     initMobileNav();
   }
 
@@ -1065,7 +1076,6 @@
 
     if (openBtn && modal) {
       openBtn.addEventListener('click', () => {
-        // Load current values
         document.getElementById('setting-theme').value = state.theme;
         document.getElementById('setting-lang').value = state.lang;
         document.getElementById('setting-src-wiki').checked = state.settings.srcWiki;
@@ -1116,7 +1126,6 @@
   }
 
   function initBookmarksModals() {
-    // Add modal
     const bmModal = document.getElementById('bm-modal');
     const openAddBtn = document.getElementById('btn-add-bookmark');
     const closeAddBtn = document.getElementById('bm-modal-close');
@@ -1160,7 +1169,7 @@
       });
     }
 
-    // Sync / Backup Modal
+    // Sync Modal
     const syncModal = document.getElementById('sync-modal');
     const openSyncBtn = document.getElementById('btn-sync-bookmarks');
     const closeSyncBtn = document.getElementById('sync-modal-close');
@@ -1229,7 +1238,7 @@
     });
   }
 
-  // --- Application Bootstrap ---
+  // --- Bootstrap ---
   document.addEventListener('DOMContentLoaded', async () => {
     applyTheme(state.theme);
     window.setLang(state.lang);
