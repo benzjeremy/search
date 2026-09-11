@@ -387,15 +387,29 @@ a:hover {
   color: var(--text-primary);
 }
 
-.search-shortcut {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  font-weight: 700;
+.search-enter-btn {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);
-  padding: 2px 7px;
-  border-radius: 4px;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  line-height: 1;
+}
+
+.search-enter-btn:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #ffffff;
 }
 
 /* Autocomplete Suggestions Dropdown */
@@ -437,28 +451,6 @@ a:hover {
   flex-shrink: 0;
 }
 
-/* Status Right Web Fallback Links */
-.status-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-}
-
-.web-fallback-note {
-  color: var(--text-muted);
-}
-
-.fallback-quick-link {
-  color: var(--link-color);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.fallback-quick-link:hover {
-  text-decoration: underline;
-}
-
 /* ==================== RESULTS LAYOUT ==================== */
 .results-wrapper {
   margin-top: 10px;
@@ -467,7 +459,8 @@ a:hover {
 .results-status-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 16px;
   padding-bottom: 12px;
   margin-bottom: 16px;
   border-bottom: 1px solid var(--border-subtle);
@@ -479,11 +472,6 @@ a:hover {
   color: var(--accent-primary);
   font-weight: 600;
   margin-left: 10px;
-}
-
-.status-right {
-  display: flex;
-  gap: 8px;
 }
 
 .btn-sm-action {
@@ -577,6 +565,13 @@ a:hover {
 .badge-private {
   background: var(--badge-bm-bg);
   color: var(--badge-bm-text);
+}
+
+.badge-official {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.3);
+  font-weight: 600;
 }
 
 .result-title {

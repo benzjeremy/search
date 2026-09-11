@@ -98,7 +98,7 @@
               aria-label="Suchanfrage"
             >
             <button type="button" id="search-clear" class="search-clear-btn" title="Eingabe leeren" style="display:none;">✕</button>
-            <div class="search-shortcut" title="Drücke / zum Suchen">/</div>
+            <button type="submit" id="search-enter-btn" class="search-enter-btn" title="Suchen (Enter)" aria-label="Suchen">↵</button>
           </div>
         </form>
 
@@ -115,12 +115,6 @@
         <div class="status-left">
           <span id="results-count" data-lang-de="Lade Suchindex..." data-lang-en="Loading search index...">Lade Suchindex...</span>
           <span class="status-latency" id="results-latency">⚡ 0.00 ms</span>
-        </div>
-        <div class="status-right" id="status-right-bar">
-          <span class="web-fallback-note" data-lang-de="Websuche:" data-lang-en="Web Search:">Websuche:</span>
-          <a href="#" class="fallback-quick-link" id="fb-google" target="_blank" rel="noopener noreferrer">Google ↗</a>
-          <a href="#" class="fallback-quick-link" id="fb-ddg" target="_blank" rel="noopener noreferrer">DuckDuckGo ↗</a>
-          <a href="#" class="fallback-quick-link" id="fb-startpage" target="_blank" rel="noopener noreferrer">Startpage ↗</a>
         </div>
       </div>
 

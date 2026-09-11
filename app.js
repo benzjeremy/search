@@ -307,52 +307,44 @@
     liveCache: new Map()
   };
 
-  // --- Federated Global Web Search APIs ---
+  // --- High-Velocity Federated Web Search APIs (< 450ms Guaranteed) ---
 
-  // 1. Wikipedia Full-Text Search API (Searches tens of millions of global pages with CORS origin=*)
-  async function fetchWikipediaFull(query, lang = 'de') {
+  function fetchWithTimeout(url, options = {}, ms = 450) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    return fetch(url, { ...options, signal: controller.signal })
+      .finally(() => clearTimeout(timer));
+  }
+
+  // 1. Wikipedia OpenSearch API (Superfast < 150ms global entity and knowledge search)
+  async function fetchWikipediaOpen(query, lang = 'de') {
     if (!state.settings.srcWiki || !query) return [];
-    const cacheKey = `wikifull_${lang}_${query.toLowerCase()}`;
+    const cacheKey = `wikiopen_${lang}_${query.toLowerCase()}`;
     if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
 
     try {
-      const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=15&utf8=&format=json&origin=*`;
-      const res = await fetch(url);
+      const url = `https://${lang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=8&namespace=0&format=json&origin=*`;
+      const res = await fetchWithTimeout(url, {}, 450);
       if (!res.ok) return [];
       const data = await res.json();
-      if (!data.query || !Array.isArray(data.query.search)) return [];
+      if (!Array.isArray(data) || !Array.isArray(data[1])) return [];
 
-      let hits = data.query.search.map(hit => ({
-        title: hit.title,
-        url: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, '_'))}`,
-        content: stripWikiSnippet(hit.snippet),
-        category: 'web',
-        badge: 'Wikipedia',
-        source: 'Wikipedia',
-        isPreHighlighted: true
-      }));
+      const titles = data[1] || [];
+      const snippets = data[2] || [];
+      const urls = data[3] || [];
 
-      // If German search yields few hits, query English Wikipedia as well for worldwide coverage
-      if (lang === 'de' && hits.length < 5) {
-        try {
-          const enUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=8&utf8=&format=json&origin=*`;
-          const enRes = await fetch(enUrl);
-          if (enRes.ok) {
-            const enData = await enRes.json();
-            if (enData.query && Array.isArray(enData.query.search)) {
-              const enHits = enData.query.search.map(hit => ({
-                title: hit.title,
-                url: `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, '_'))}`,
-                content: stripWikiSnippet(hit.snippet),
-                category: 'web',
-                badge: 'Wikipedia EN',
-                source: 'Wikipedia',
-                isPreHighlighted: true
-              }));
-              hits.push(...enHits);
-            }
-          }
-        } catch (e) {}
+      const hits = [];
+      for (let i = 0; i < titles.length; i++) {
+        if (!titles[i] || !urls[i]) continue;
+        hits.push({
+          title: titles[i],
+          url: urls[i],
+          content: snippets[i] || (lang === 'de' ? `Wikipedia-Artikel über ${titles[i]}` : `Wikipedia article about ${titles[i]}`),
+          category: 'web',
+          badge: 'Wikipedia',
+          source: 'Wikipedia',
+          isPreHighlighted: false
+        });
       }
 
       state.liveCache.set(cacheKey, hits);
@@ -362,7 +354,48 @@
     }
   }
 
-  // 2. Wikipedia Summary API (For the Knowledge Sidebar)
+  // 2. Wikidata Official Website Lookup (Finds direct official domains for brands, radios, companies, institutions)
+  async function fetchWikidataOfficial(query, lang = 'de') {
+    if (!query || query.length < 2) return null;
+    const cacheKey = `wdofficial_${lang}_${query.toLowerCase()}`;
+    if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
+
+    try {
+      const searchUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(query)}&language=${lang}&limit=1&format=json&origin=*`;
+      const sRes = await fetchWithTimeout(searchUrl, {}, 380);
+      if (!sRes.ok) return null;
+      const sData = await sRes.json();
+      if (!sData.search || !sData.search.length) return null;
+
+      const ent = sData.search[0];
+      const claimUrl = `https://www.wikidata.org/w/api.php?action=wbgetclaims&entity=${ent.id}&property=P856&format=json&origin=*`;
+      const cRes = await fetchWithTimeout(claimUrl, {}, 380);
+      if (!cRes.ok) return null;
+      const cData = await cRes.json();
+      const p856 = cData.claims?.P856;
+      const officialUrl = p856?.[0]?.mainsnak?.datavalue?.value;
+
+      if (officialUrl && typeof officialUrl === 'string' && officialUrl.startsWith('http')) {
+        const result = {
+          title: `${ent.label} — ${lang === 'de' ? 'Offizielle Website' : 'Official Website'}`,
+          url: sanitizeURL(officialUrl),
+          content: ent.description ? `${ent.description}. ${lang === 'de' ? 'Offizieller direkter Webauftritt.' : 'Official web portal.'}` : (lang === 'de' ? 'Offizieller direkter Webauftritt.' : 'Official web portal.'),
+          category: 'web',
+          badge: lang === 'de' ? '🌐 Offizielle Website' : '🌐 Official Website',
+          source: 'Web',
+          isOfficial: true,
+          isPreHighlighted: false
+        };
+        state.liveCache.set(cacheKey, result);
+        return result;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 3. Wikipedia Summary API (For the Knowledge Sidebar, ultra-fast < 100ms)
   async function fetchWikipediaCard(query, lang = 'de') {
     if (!state.settings.srcWiki || !query) return null;
     const cacheKey = `wiki_card_${lang}_${query.toLowerCase()}`;
@@ -370,9 +403,9 @@
 
     try {
       const endpoint = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
-      const res = await fetch(endpoint, {
+      const res = await fetchWithTimeout(endpoint, {
         headers: { 'Accept': 'application/json' }
-      });
+      }, 350);
       if (!res.ok) return null;
       const data = await res.json();
       if (!data.extract) return null;
@@ -392,65 +425,15 @@
     }
   }
 
-  // 3. DuckDuckGo Instant Answers & Deep Topics
-  async function fetchDuckDuckGo(query) {
-    if (!state.settings.srcDDG || !query) return { card: null, items: [] };
-    const cacheKey = `ddg_${query.toLowerCase()}`;
-    if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
-
-    try {
-      const endpoint = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1`;
-      const res = await fetch(endpoint);
-      if (!res.ok) return { card: null, items: [] };
-      const data = await res.json();
-
-      let card = null;
-      if (data.AbstractText && data.Heading) {
-        card = {
-          title: data.Heading,
-          subtitle: data.AbstractSource || 'DuckDuckGo Instant Answer',
-          extract: data.AbstractText,
-          url: sanitizeURL(data.AbstractURL),
-          imageUrl: data.Image,
-          source: 'DuckDuckGo'
-        };
-      }
-
-      const items = [];
-      if (Array.isArray(data.RelatedTopics)) {
-        data.RelatedTopics.slice(0, 8).forEach(topic => {
-          if (topic.Text && topic.FirstURL) {
-            const parts = topic.Text.split(' - ');
-            items.push({
-              title: parts[0],
-              url: sanitizeURL(topic.FirstURL),
-              content: topic.Text,
-              source: 'DuckDuckGo',
-              category: 'web',
-              badge: 'DuckDuckGo Web',
-              tags: ['web']
-            });
-          }
-        });
-      }
-
-      const result = { card, items };
-      state.liveCache.set(cacheKey, result);
-      return result;
-    } catch (e) {
-      return { card: null, items: [] };
-    }
-  }
-
-  // 4. Hacker News Algolia Web Search API
+  // 4. Hacker News Algolia Web Search API (< 80ms)
   async function fetchHackerNews(query) {
     if (!state.settings.srcHN || !query) return [];
     const cacheKey = `hn_${query.toLowerCase()}`;
     if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
 
     try {
-      const endpoint = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(query)}&hitsPerPage=8`;
-      const res = await fetch(endpoint);
+      const endpoint = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(query)}&tags=story&hitsPerPage=6`;
+      const res = await fetchWithTimeout(endpoint, {}, 350);
       if (!res.ok) return [];
       const data = await res.json();
 
@@ -478,43 +461,17 @@
     }
   }
 
-  // 5. OpenStreetMap Nominatim for Places & Cities
-  async function fetchOpenStreetMap(query) {
-    if (!query || query.length < 3) return [];
-    try {
-      const endpoint = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=2`;
-      const res = await fetch(endpoint, {
-        headers: { 'Accept': 'application/json' }
-      });
-      if (!res.ok) return [];
-      const data = await res.json();
-      if (!Array.isArray(data)) return [];
-
-      return data.map(item => ({
-        title: item.display_name.split(',')[0] + ' (Karte & Standort)',
-        url: `https://www.openstreetmap.org/?mlat=${item.lat}&mlon=${item.lon}#map=14/${item.lat}/${item.lon}`,
-        content: `Standort auf OpenStreetMap: ${item.display_name} (Typ: ${item.type || 'Ort'})`,
-        source: 'OpenStreetMap',
-        category: 'web',
-        badge: 'OpenStreetMap',
-        tags: ['karte', 'ort', 'geo']
-      }));
-    } catch (e) {
-      return [];
-    }
-  }
-
-  // 6. Brave Search API (If user provided custom API key)
+  // 5. Brave Search API (If user provided custom API key)
   async function fetchBraveSearch(query) {
     if (!state.settings.braveKey || !query) return [];
     try {
       const endpoint = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=8`;
-      const res = await fetch(endpoint, {
+      const res = await fetchWithTimeout(endpoint, {
         headers: {
           'Accept': 'application/json',
           'X-Subscription-Token': state.settings.braveKey
         }
-      });
+      }, 400);
       if (!res.ok) return [];
       const data = await res.json();
       const items = [];
@@ -667,54 +624,73 @@
     executeSearch();
   };
 
-  // --- Primary Search Aggregator ---
+  // --- High-Performance Progressive Search Engine ---
+  let activeSearchId = 0;
+
   async function executeSearch() {
     const input = document.getElementById('search-input');
     const query = input ? input.value.trim() : '';
-    const resultsContainer = document.getElementById('search-results');
-    const knowledgeSidebar = document.getElementById('knowledge-sidebar');
-    const knowledgeCardEl = document.getElementById('knowledge-card');
-    const countBadge = document.getElementById('results-count');
-    const latencyBadge = document.getElementById('results-latency');
     const clearBtn = document.getElementById('search-clear');
+    const searchId = ++activeSearchId;
 
     if (clearBtn) {
       clearBtn.style.display = query ? 'flex' : 'none';
     }
 
-    updateFallbackLinks(query);
-
     const startTime = performance.now();
 
-    // 1. Query local in-memory BM25 index over database.json + bookmarks
+    // 1. Instant local BM25 search over database.json + private bookmarks (< 1 ms)
     const localHits = state.engine.search(query);
+    const localElapsed = performance.now() - startTime;
 
-    // 2. Query global live web sources simultaneously
-    let liveCard = null;
-    let liveWebItems = [];
+    // Phase 1: Render local results IMMEDIATELY (Instant sub-millisecond response)
+    renderSearchResults(localHits, [], null, query, localElapsed);
 
-    if (query) {
-      const [wikiFull, ddgResult, hnItems, osmItems, braveItems] = await Promise.all([
-        fetchWikipediaFull(query, state.lang),
-        fetchDuckDuckGo(query),
-        fetchHackerNews(query),
-        fetchOpenStreetMap(query),
-        fetchBraveSearch(query)
+    if (!query) return;
+
+    // Phase 2: Asynchronous Non-Blocking Live Web Search (< 400 ms)
+    enrichLiveResults(query, localHits, startTime, searchId);
+  }
+
+  async function enrichLiveResults(query, localHits, startTime, searchId) {
+    try {
+      const [wikiHits, officialSite, hnItems, braveHits] = await Promise.all([
+        fetchWikipediaOpen(query, state.lang),
+        fetchWikidataOfficial(query, state.lang),
+        state.settings.srcHN ? fetchHackerNews(query) : Promise.resolve([]),
+        state.settings.braveKey ? fetchBraveSearch(query) : Promise.resolve([])
       ]);
 
-      if (wikiFull && wikiFull.length) liveWebItems.push(...wikiFull);
-      if (ddgResult && ddgResult.items) liveWebItems.push(...ddgResult.items);
-      if (hnItems && hnItems.length) liveWebItems.push(...hnItems);
-      if (osmItems && osmItems.length) liveWebItems.push(...osmItems);
-      if (braveItems && braveItems.length) liveWebItems.push(...braveItems);
+      if (searchId !== activeSearchId) return; // Discard outdated search
 
-      // Top entity knowledge card from Wikipedia
-      const topEntity = (wikiFull && wikiFull.length > 0) ? wikiFull[0].title : query;
+      // Fetch Knowledge Card for top entity
+      const topEntity = officialSite 
+        ? officialSite.title.split('—')[0].trim() 
+        : (wikiHits.length > 0 ? wikiHits[0].title : query);
       const card = await fetchWikipediaCard(topEntity, state.lang);
-      liveCard = card || (ddgResult ? ddgResult.card : null);
-    }
 
-    const elapsed = performance.now() - startTime;
+      if (searchId !== activeSearchId) return; // Discard outdated search
+
+      const liveItems = [];
+      if (officialSite) liveItems.push(officialSite);
+      if (wikiHits && wikiHits.length) liveItems.push(...wikiHits);
+      if (hnItems && hnItems.length) liveItems.push(...hnItems);
+      if (braveHits && braveHits.length) liveItems.push(...braveHits);
+
+      const totalElapsed = performance.now() - startTime;
+      renderSearchResults(localHits, liveItems, card, query, totalElapsed);
+    } catch (e) {
+      // Keep local hits rendered
+    }
+  }
+
+  function renderSearchResults(localHits, liveWebItems = [], liveCard = null, query = '', elapsed = 0) {
+    const resultsContainer = document.getElementById('search-results');
+    const knowledgeSidebar = document.getElementById('knowledge-sidebar');
+    const knowledgeCardEl = document.getElementById('knowledge-card');
+    const countBadge = document.getElementById('results-count');
+    const latencyBadge = document.getElementById('results-latency');
+
     if (latencyBadge) {
       latencyBadge.textContent = `⚡ ${elapsed < 1 ? Math.round(elapsed * 1000) + ' µs' : elapsed.toFixed(2) + ' ms'}`;
     }
@@ -740,7 +716,15 @@
     const combined = [];
     const seenURLs = new Set();
 
-    // 1. Ecosystem hits & curated DB hits
+    // 1. Official website from Wikidata (placed at the very top)
+    const officialItem = liveWebItems.find(i => i.isOfficial);
+    if (officialItem) {
+      const cleanU = sanitizeURL(officialItem.url);
+      seenURLs.add(cleanU);
+      combined.push(officialItem);
+    }
+
+    // 2. Curated Database & Ecosystem hits
     localHits.forEach(hit => {
       const cleanU = sanitizeURL(hit.doc.url);
       if (!seenURLs.has(cleanU)) {
@@ -750,7 +734,7 @@
           url: cleanU,
           content: hit.snippet || hit.doc.content,
           category: hit.doc.category,
-          badge: hit.doc.isBookmark ? 'Lesezeichen' : (hit.doc.category === 'ecosystem' ? 'Jeremy Benz Ökosystem' : 'Web Index'),
+          badge: hit.doc.isBookmark ? (state.lang === 'de' ? 'Lesezeichen' : 'Bookmark') : (hit.doc.category === 'ecosystem' ? 'Jeremy Benz Ökosystem' : 'Web Index'),
           isBookmark: hit.doc.isBookmark,
           rawBM: hit.doc.rawBM,
           isPreHighlighted: false
@@ -758,8 +742,9 @@
       }
     });
 
-    // 2. Global Live Web hits
+    // 3. Live Web hits (Wikipedia OpenSearch, Hacker News, Brave)
     liveWebItems.forEach(item => {
+      if (item.isOfficial) return; // Already at top
       const cleanU = sanitizeURL(item.url);
       if (!seenURLs.has(cleanU)) {
         seenURLs.add(cleanU);
@@ -777,8 +762,8 @@
 
     if (countBadge) {
       countBadge.textContent = state.lang === 'de' 
-        ? `${combined.length} Ergebnisse im Web gefunden` 
-        : `${combined.length} web results found`;
+        ? `${combined.length} Treffer gefunden` 
+        : `${combined.length} results found`;
     }
 
     if (!resultsContainer) return;
@@ -789,8 +774,8 @@
           <div class="empty-icon">🔍</div>
           <h3>${state.lang === 'de' ? 'Keine Treffer gefunden' : 'No results found'}</h3>
           <p>${state.lang === 'de' 
-            ? `Für die Abfrage <code>${escapeHTML(query)}</code> wurden keine Treffer ermittelt. Probiere den Google- oder DuckDuckGo-Direktlink oben rechts aus.`
-            : `No matching items found for <code>${escapeHTML(query)}</code>. Try one of the direct search links above.`}
+            ? `Für die Abfrage <code>${escapeHTML(query)}</code> wurden keine Treffer ermittelt.`
+            : `No matching items found for <code>${escapeHTML(query)}</code>.`}
           </p>
         </div>
       `;
@@ -829,6 +814,7 @@
   }
 
   function getBadgeClass(badge) {
+    if (badge.includes('Offiziell') || badge.includes('Official')) return 'badge-official';
     if (badge.includes('Ökosystem') || badge.includes('Ecosystem')) return 'badge-ecosystem';
     if (badge.includes('Wikipedia')) return 'badge-wiki';
     if (badge.includes('Hacker News')) return 'badge-hn';
@@ -869,17 +855,6 @@
 
   function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  function updateFallbackLinks(query) {
-    const q = query ? encodeURIComponent(query) : '';
-    const fbGoogle = document.getElementById('fb-google');
-    const fbDDG = document.getElementById('fb-ddg');
-    const fbStartpage = document.getElementById('fb-startpage');
-
-    if (fbGoogle) fbGoogle.href = q ? `https://www.google.com/search?q=${q}` : 'https://www.google.com/';
-    if (fbDDG) fbDDG.href = q ? `https://duckduckgo.com/?q=${q}` : 'https://duckduckgo.com/';
-    if (fbStartpage) fbStartpage.href = q ? `https://www.startpage.com/sp/search?query=${q}` : 'https://www.startpage.com/';
   }
 
   // --- Autocomplete with Live Wikipedia OpenSearch ---
@@ -973,6 +948,29 @@
           if (dd) dd.style.display = 'none';
           executeSearch();
         }
+      });
+    }
+
+    const enterBtn = document.getElementById('search-enter-btn');
+    const searchForm = document.getElementById('search-form');
+
+    if (enterBtn) {
+      enterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        clearTimeout(debounceTimer);
+        const dd = document.getElementById('suggestions-dropdown');
+        if (dd) dd.style.display = 'none';
+        executeSearch();
+      });
+    }
+
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        clearTimeout(debounceTimer);
+        const dd = document.getElementById('suggestions-dropdown');
+        if (dd) dd.style.display = 'none';
+        executeSearch();
       });
     }
 

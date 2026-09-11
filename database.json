@@ -754,5 +754,462 @@
       "deutschland"
     ],
     "content": "Wetter.de bietet stundengenaue Wettervorhersagen für alle Orte in Deutschland, Regenradar, Unwetterwarnungen, Pollenflug und 14-Tage-Wetterausblick."
+  },
+  {
+    "id": "amazon-de",
+    "title": "Amazon Deutschland — Online-Shopping für Elektronik, Bücher & mehr",
+    "url": "https://www.amazon.de/",
+    "category": "web",
+    "source": "E-Commerce",
+    "tags": [
+      "amazon",
+      "shopping",
+      "versand",
+      "prime",
+      "bücher",
+      "elektronik"
+    ],
+    "content": "Offizielle deutsche Website von Amazon. Riesige Auswahl an Elektronik, Kleidung, Büchern, Lebensmitteln und Prime Video Streaming."
+  },
+  {
+    "id": "ebay-de",
+    "title": "eBay Deutschland — Elektronik, Autos, Mode & Sammlerstücke",
+    "url": "https://www.ebay.de/",
+    "category": "web",
+    "source": "E-Commerce",
+    "tags": [
+      "ebay",
+      "auktion",
+      "shopping",
+      "marktplatz",
+      "gebraucht"
+    ],
+    "content": "Offizielle Website von eBay Deutschland. Kaufen und Verkaufen von Neu- und Gebrauchtwaren, Elektronik, Autos und Sammlerstücken."
+  },
+  {
+    "id": "kleinanzeigen",
+    "title": "Kleinanzeigen — Kostenlos inserieren, kaufen & verkaufen",
+    "url": "https://www.kleinanzeigen.de/",
+    "category": "web",
+    "source": "Marktplatz",
+    "tags": [
+      "kleinanzeigen",
+      "ebay kleinanzeigen",
+      "gebraucht",
+      "wohnung",
+      "auto",
+      "inserate"
+    ],
+    "content": "Deutschlands größter Online-Flohmarkt. Finde Wohnungen, Autos, Elektronik, Möbel und Jobs in deiner Nachbarschaft."
+  },
+  {
+    "id": "bahn-de",
+    "title": "Deutsche Bahn — Fahrplanauskunft & Ticketbuchung (bahn.de)",
+    "url": "https://www.bahn.de/",
+    "category": "web",
+    "source": "Mobilität & Verkehr",
+    "tags": [
+      "bahn",
+      "deutsche bahn",
+      "zug",
+      "ice",
+      "ticket",
+      "fahrplan",
+      "verspätung"
+    ],
+    "content": "Offizielles Portal der Deutschen Bahn (DB). Fahrplanauskunft in Echtzeit, ICE- und Regionalzug-Tickets buchen, Deutschlandticket und BahnCard."
+  },
+  {
+    "id": "dhl-de",
+    "title": "DHL Deutschland — Paketverfolgung, Versand & Packstationen",
+    "url": "https://www.dhl.de/",
+    "category": "web",
+    "source": "Logistik & Post",
+    "tags": [
+      "dhl",
+      "paket",
+      "sendungsverfolgung",
+      "packstation",
+      "porto",
+      "post"
+    ],
+    "content": "Offizielle Website von DHL Deutschland. Sendungsverfolgung für Pakete und Briefe, Portoberechnung und Packstation-Standorte finden."
+  },
+  {
+    "id": "wetter-com",
+    "title": "Wetter.com — Aktuelle Wettervorhersage & Regenradar",
+    "url": "https://www.wetter.com/",
+    "category": "web",
+    "source": "Wetter & Meteorologie",
+    "tags": [
+      "wetter",
+      "wetter.com",
+      "regenradar",
+      "vorhersage",
+      "temperatur"
+    ],
+    "content": "Aktuelles Wetter und 16-Tage-Vorhersage für Deutschland und weltweit mit hochauflösendem Regenradar und Unwetterwarnungen."
+  },
+  {
+    "id": "deepl-translate",
+    "title": "DeepL Translate — Der präziseste KI-Übersetzer der Welt",
+    "url": "https://www.deepl.com/translator",
+    "category": "web",
+    "source": "Sprache & KI",
+    "tags": [
+      "deepl",
+      "übersetzer",
+      "translate",
+      "englisch",
+      "deutsch",
+      "ki",
+      "sprachen"
+    ],
+    "content": "Offizieller Übersetzer von DeepL. Übersetze Texte und ganze Dokumente mit höchster sprachlicher Nuancierung und Präzision."
+  },
+  {
+    "id": "duden-online",
+    "title": "Duden Online — Wörterbuch der deutschen Sprache & Rechtschreibung",
+    "url": "https://www.duden.de/",
+    "category": "web",
+    "source": "Bildung & Nachschlagewerk",
+    "tags": [
+      "duden",
+      "wörterbuch",
+      "rechtschreibung",
+      "grammatik",
+      "synonyme",
+      "bedeutung"
+    ],
+    "content": "Offizielles Online-Wörterbuch der deutschen Sprache. Rechtschreibung, Grammatik, Wortbedeutung und Synonyme nach amtlichen Regeln."
+  },
+  {
+    "id": "zdf-heute",
+    "title": "ZDFheute — Aktuelle Nachrichten, Videos & Livestreams",
+    "url": "https://www.zdf.de/nachrichten",
+    "category": "web",
+    "source": "Nachrichten & Medien",
+    "tags": [
+      "zdf",
+      "nachrichten",
+      "zdfheute",
+      "politik",
+      "heute journal",
+      "mediathek"
+    ],
+    "content": "Aktuelle Meldungen, Hintergründe und Videos aus Politik, Wirtschaft, Wissenschaft und Kultur vom Zweiten Deutschen Fernsehen."
+  },
+  {
+    "id": "zeit-online",
+    "title": "ZEIT ONLINE — Nachrichten, Hintergründe und Debatten",
+    "url": "https://www.zeit.de/",
+    "category": "web",
+    "source": "Nachrichten & Journalismus",
+    "tags": [
+      "zeit",
+      "zeit online",
+      "nachrichten",
+      "politik",
+      "wirtschaft",
+      "gesellschaft"
+    ],
+    "content": "Unabhängiger Journalismus und Analysen. Berichte über Weltpolitik, Wirtschaft, Kultur, Wissenschaft und Digitales."
+  },
+  {
+    "id": "faz-net",
+    "title": "FAZ.NET — Frankfurter Allgemeine Zeitung für Deutschland",
+    "url": "https://www.faz.net/",
+    "category": "web",
+    "source": "Nachrichten & Journalismus",
+    "tags": [
+      "faz",
+      "frankfurter allgemeine",
+      "zeitung",
+      "nachrichten",
+      "finanzen",
+      "politik"
+    ],
+    "content": "Nachrichten und fundierte Kommentare der Frankfurter Allgemeinen Zeitung zu Politik, Wirtschaft, Finanzen, Kultur und Sport."
+  },
+  {
+    "id": "sueddeutsche-de",
+    "title": "Süddeutsche Zeitung — SZ.de aktuelle Nachrichten",
+    "url": "https://www.sueddeutsche.de/",
+    "category": "web",
+    "source": "Nachrichten & Journalismus",
+    "tags": [
+      "sz",
+      "süddeutsche",
+      "zeitung",
+      "nachrichten",
+      "münchen",
+      "investigativ"
+    ],
+    "content": "Aktuelle Nachrichten, Reportagen und investigative Recherchen der Süddeutschen Zeitung aus Deutschland und aller Welt."
+  },
+  {
+    "id": "radio-1live",
+    "title": "1LIVE — Der junge Radiosender des WDR (Livestream & Playlist)",
+    "url": "https://www.wdr.de/radio/1live/",
+    "category": "web",
+    "source": "Radio & Musik",
+    "tags": [
+      "1live",
+      "einslive",
+      "wdr",
+      "radio",
+      "webradio",
+      "musik",
+      "comedy"
+    ],
+    "content": "Offizielle Webpräsenz von 1LIVE. Die beste neue Musik, Comedy, Podcasts, Sektor-Events und Webradio-Streams des WDR."
+  },
+  {
+    "id": "radio-wdr",
+    "title": "WDR — Westdeutscher Rundfunk Köln (Fernsehen, Radio, Nachrichten)",
+    "url": "https://www1.wdr.de/",
+    "category": "web",
+    "source": "Radio & Rundfunk",
+    "tags": [
+      "wdr",
+      "rundfunk",
+      "nrw",
+      "nachrichten",
+      "radio",
+      "fernsehen"
+    ],
+    "content": "Offizielle Website des Westdeutschen Rundfunks (WDR) für Nordrhein-Westfalen. Landesnachrichten, Wetter, Verkehr und Mediathek."
+  },
+  {
+    "id": "radio-swr3",
+    "title": "SWR3 — Mehr Hits, mehr Kicks, einfach SWR3",
+    "url": "https://www.swr3.de/",
+    "category": "web",
+    "source": "Radio & Musik",
+    "tags": [
+      "swr3",
+      "swr",
+      "radio",
+      "popradio",
+      "musik",
+      "verkehr",
+      "podcast"
+    ],
+    "content": "Offizieller Webauftritt der Popwelle SWR3. Aktuelle Hits, Elchradio, Comedy, Stau- und Blitzerwarnungen und Webradio-Livestream."
+  },
+  {
+    "id": "radio-bayern3",
+    "title": "BAYERN 3 — Bayerns Hit-Radio (Livestream & Musik)",
+    "url": "https://www.bayern3.de/",
+    "category": "web",
+    "source": "Radio & Musik",
+    "tags": [
+      "bayern3",
+      "br",
+      "radio",
+      "bayern",
+      "musik",
+      "charts",
+      "webradio"
+    ],
+    "content": "Offizieller Webauftritt von BAYERN 3. Aktuelle Hits, Bayern-News, Comedy und die beliebtesten Frühaufdreher-Shows im Stream."
+  },
+  {
+    "id": "nike-de",
+    "title": "Nike Deutschland — Sneaker, Sportbekleidung & Schuhe",
+    "url": "https://www.nike.com/de/",
+    "category": "web",
+    "source": "Mode & Sport",
+    "tags": [
+      "nike",
+      "sneaker",
+      "schuhe",
+      "sport",
+      "air max",
+      "jordan",
+      "kleidung"
+    ],
+    "content": "Offizieller Online-Shop von Nike Deutschland. Innovative Sportschuhe, Air Jordan, Air Max, Trainingsbekleidung und Streetwear."
+  },
+  {
+    "id": "puma-de",
+    "title": "PUMA Deutschland — Forever Faster Sport & Streetwear",
+    "url": "https://de.puma.com/",
+    "category": "web",
+    "source": "Mode & Sport",
+    "tags": [
+      "puma",
+      "sport",
+      "sneaker",
+      "schuhe",
+      "fussball",
+      "fitness",
+      "mode"
+    ],
+    "content": "Offizielle PUMA Website Deutschland. Hochwertige Sportbekleidung, Laufschuhe, Fußballschuhe und Streetwear Kollektionen."
+  },
+  {
+    "id": "mediamarkt-de",
+    "title": "MediaMarkt Deutschland — Technik, Elektronik & Haushaltsgeräte",
+    "url": "https://www.mediamarkt.de/",
+    "category": "web",
+    "source": "Elektronik & Handel",
+    "tags": [
+      "mediamarkt",
+      "elektronik",
+      "technik",
+      "tv",
+      "smartphone",
+      "gaming",
+      "laptop"
+    ],
+    "content": "Offizieller Online-Shop von MediaMarkt. Große Auswahl an Fernsehern, Handys, Computern, Gaming-Konsolen und Haushaltsgroßgeräten."
+  },
+  {
+    "id": "saturn-de",
+    "title": "Saturn Deutschland — Technik & Unterhaltungselektronik online kaufen",
+    "url": "https://www.saturn.de/",
+    "category": "web",
+    "source": "Elektronik & Handel",
+    "tags": [
+      "saturn",
+      "elektronik",
+      "technik",
+      "computer",
+      "audio",
+      "angebote"
+    ],
+    "content": "Offizieller Saturn Online-Shop. Neueste Technik-Highlights, PCs, Apple-Produkte, Smart-Home und Unterhaltungselektronik."
+  },
+  {
+    "id": "reddit-com",
+    "title": "Reddit — The front page of the internet",
+    "url": "https://www.reddit.com/",
+    "category": "web",
+    "source": "Social & Community",
+    "tags": [
+      "reddit",
+      "forum",
+      "community",
+      "diskussion",
+      "news",
+      "askreddit"
+    ],
+    "content": "Offizielle Plattform von Reddit. Tausende Subreddits, Diskussionen, News, Memes und weltweiter Community-Austausch zu allen Themen."
+  },
+  {
+    "id": "spotify-web",
+    "title": "Spotify — Musik und Podcasts für Millionen Menschen",
+    "url": "https://open.spotify.com/",
+    "category": "web",
+    "source": "Musik & Streaming",
+    "tags": [
+      "spotify",
+      "musik",
+      "podcast",
+      "streaming",
+      "playlist",
+      "audio"
+    ],
+    "content": "Offizieller Spotify Web-Player. Streame Millionen Songs, personalisierte Playlists, Hörbücher und weltweite Podcasts online."
+  },
+  {
+    "id": "netflix-com",
+    "title": "Netflix — Serien, Filme und Dokumentationen online streamen",
+    "url": "https://www.netflix.com/",
+    "category": "web",
+    "source": "Video & Streaming",
+    "tags": [
+      "netflix",
+      "serien",
+      "filme",
+      "streaming",
+      "kino",
+      "shows"
+    ],
+    "content": "Offizieller Streamingdienst von Netflix. Streame weltbekannte Originals, Blockbuster, Serien und Anime auf Abruf."
+  },
+  {
+    "id": "chatgpt-openai",
+    "title": "ChatGPT — KI-Assistent von OpenAI",
+    "url": "https://chatgpt.com/",
+    "category": "web",
+    "source": "Künstliche Intelligenz",
+    "tags": [
+      "chatgpt",
+      "openai",
+      "ki",
+      "ai",
+      "llm",
+      "gpt-4",
+      "assistent"
+    ],
+    "content": "Offizieller KI-Chatbot ChatGPT von OpenAI. Antworten auf Fragen, Texterstellung, Programmieren, Übersetzung und Brainstorming."
+  },
+  {
+    "id": "anthropic-claude",
+    "title": "Claude AI — Sicherer, intelligenter KI-Assistent von Anthropic",
+    "url": "https://claude.ai/",
+    "category": "web",
+    "source": "Künstliche Intelligenz",
+    "tags": [
+      "claude",
+      "anthropic",
+      "ki",
+      "ai",
+      "sonnet",
+      "opus",
+      "programmieren"
+    ],
+    "content": "Offizielle KI-Plattform von Anthropic. Claude ist ein hochentwickelter KI-Assistent für Textanalyse, Recherche und Programmierung."
+  },
+  {
+    "id": "gitlab-com",
+    "title": "GitLab — The One DevOps Platform",
+    "url": "https://gitlab.com/",
+    "category": "web",
+    "source": "Entwicklung & DevOps",
+    "tags": [
+      "gitlab",
+      "git",
+      "devops",
+      "ci/cd",
+      "code",
+      "repository"
+    ],
+    "content": "Offizielle GitLab-Plattform für Versionskontrolle, Issue-Tracking, CI/CD-Pipelines und ganzheitliches Software-Lifecycle-Management."
+  },
+  {
+    "id": "steam-store",
+    "title": "Steam — Die ultimative Gaming-Plattform von Valve",
+    "url": "https://store.steampowered.com/",
+    "category": "web",
+    "source": "Gaming",
+    "tags": [
+      "steam",
+      "valve",
+      "gaming",
+      "spiele",
+      "pc",
+      "download",
+      "community"
+    ],
+    "content": "Offizieller Store der weltweit führenden PC-Spiele-Plattform Steam. Tausende Games, Community-Hubs, Workshops und Sales."
+  },
+  {
+    "id": "openstreetmap-org",
+    "title": "OpenStreetMap — Freie, von der Community erstellte Weltkarte",
+    "url": "https://www.openstreetmap.org/",
+    "category": "web",
+    "source": "Karten & Geodaten",
+    "tags": [
+      "openstreetmap",
+      "osm",
+      "karte",
+      "navigation",
+      "gps",
+      "weltkarte"
+    ],
+    "content": "Freie und offene Weltkarte im Wiki-Prinzip. Open-Source Alternative zu Google Maps mit detaillierten Geodaten und Wanderwegen."
   }
 ]
