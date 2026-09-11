@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-//go:embed index.html style.css app.js favicon.svg
+//go:embed index.html style.css app.js favicon.svg database.json
 var content embed.FS
 
 // Handler returns an http.Handler serving the embedded static web assets.
