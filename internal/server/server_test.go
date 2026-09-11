@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/benzjeremy/search/internal/bookmarks"
 	"github.com/benzjeremy/search/internal/engine"
 )
 
@@ -137,5 +138,82 @@ func TestIndexAuth(t *testing.T) {
 
 	if recValid.Code != http.StatusCreated {
 		t.Fatalf("Expected HTTP 201 Created, got %d", recValid.Code)
+	}
+}
+
+func TestBookmarksAPI(t *testing.T) {
+	srv, _ := setupTestServer()
+	tmpDir := t.TempDir()
+	store, err := bookmarks.NewStore(tmpDir + "/test-bm.json")
+	if err != nil {
+		t.Fatalf("failed to init bm store: %v", err)
+	}
+	srv.SetBookmarkStore(store)
+
+	handler := srv.Routes()
+
+	// 1. GET Bookmarks (empty)
+	req := httptest.NewRequest(http.MethodGet, "/api/bookmarks", nil)
+	req.Host = "127.0.0.1:8085"
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+
+	// 2. POST Bookmark
+	bmJSON := `{"title":"Go Dev","url":"https://go.dev","notes":"Official Go site","tags":["go"]}`
+	reqPost := httptest.NewRequest(http.MethodPost, "/api/bookmarks", bytes.NewReader([]byte(bmJSON)))
+	reqPost.Host = "127.0.0.1:8085"
+	recPost := httptest.NewRecorder()
+	handler.ServeHTTP(recPost, reqPost)
+
+	if recPost.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", recPost.Code, recPost.Body.String())
+	}
+
+	var created bookmarks.Bookmark
+	if err := json.NewDecoder(recPost.Body).Decode(&created); err != nil {
+		t.Fatalf("failed to decode created bookmark: %v", err)
+	}
+
+	// 3. Search query should find the newly indexed bookmark
+	reqSearch := httptest.NewRequest(http.MethodGet, "/api/search?q=Official", nil)
+	reqSearch.Host = "127.0.0.1:8085"
+	recSearch := httptest.NewRecorder()
+	handler.ServeHTTP(recSearch, reqSearch)
+
+	if recSearch.Code != http.StatusOK {
+		t.Fatalf("search failed: %d", recSearch.Code)
+	}
+	var searchResp SearchAPIResponse
+	_ = json.NewDecoder(recSearch.Body).Decode(&searchResp)
+	if searchResp.Count == 0 {
+		t.Errorf("expected to find indexed bookmark in search API")
+	}
+
+	// 4. DELETE Bookmark
+	reqDel := httptest.NewRequest(http.MethodDelete, "/api/bookmarks?id="+created.ID, nil)
+	reqDel.Host = "127.0.0.1:8085"
+	recDel := httptest.NewRecorder()
+	handler.ServeHTTP(recDel, reqDel)
+
+	if recDel.Code != http.StatusOK {
+		t.Fatalf("expected 200 on delete, got %d", recDel.Code)
+	}
+}
+
+func TestStaticWebServing(t *testing.T) {
+	srv, _ := setupTestServer()
+	handler := srv.Routes()
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Host = "127.0.0.1:8085"
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 for embedded static web root, got %d", rec.Code)
 	}
 }

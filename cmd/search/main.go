@@ -10,12 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/benzjeremy/search/internal/bookmarks"
 	"github.com/benzjeremy/search/internal/crawler"
 	"github.com/benzjeremy/search/internal/engine"
 	"github.com/benzjeremy/search/internal/server"
 )
 
-const version = "v1.1"
+const version = "v1.2"
 
 func main() {
 	portFlag := flag.Int("port", 8080, "Port to listen on (strictly bound to 127.0.0.1)")
@@ -27,6 +28,9 @@ func main() {
 	importFlag := flag.String("import", "", "Import precomputed index from a JSON file")
 	crawlURLFlag := flag.String("crawl-url", "", "Crawl a specific HTTP/HTTPS URL and index its content")
 	crawlWhitelistFlag := flag.Bool("crawl-whitelist", false, "Crawl official curated developer & project documentation URLs")
+	guiFlag := flag.Bool("gui", false, "Launch native desktop UI window (WebKitGTK / Edge / Chrome)")
+	serveFlag := flag.Bool("serve", false, "Run strictly in background server daemon mode without GUI")
+	bmPathFlag := flag.String("bookmarks-file", "", "Custom path to local bookmarks JSON storage")
 	versionFlag := flag.Bool("version", false, "Print version information and exit")
 	flag.Parse()
 
@@ -54,7 +58,18 @@ func main() {
 		}
 	}
 
-	// 3. Index local directory if specified
+	// 3. Load private local bookmarks
+	bmStore, err := bookmarks.NewStore(*bmPathFlag)
+	if err != nil {
+		log.Printf("⚠️ Warning: could not initialize bookmarks store: %v\n", err)
+	} else {
+		bmCount := bmStore.IndexAll(idx)
+		if bmCount > 0 {
+			fmt.Printf("🔒 Loaded and indexed %d private local bookmarks\n", bmCount)
+		}
+	}
+
+	// 4. Index local directory if specified
 	if *dirFlag != "" {
 		fmt.Printf("📂 Crawling and indexing local directory: %s ...\n", *dirFlag)
 		count, err := crawler.IndexLocalDirectory(idx, *dirFlag)
@@ -65,7 +80,7 @@ func main() {
 		}
 	}
 
-	// 4. Crawl single web URL if specified
+	// 5. Crawl single web URL if specified
 	if *crawlURLFlag != "" {
 		fmt.Printf("🌐 Crawling web resource: %s ...\n", *crawlURLFlag)
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -79,7 +94,7 @@ func main() {
 		}
 	}
 
-	// 5. Crawl curated whitelist if requested
+	// 6. Crawl curated whitelist if requested
 	if *crawlWhitelistFlag {
 		fmt.Println("🌐 Crawling official curated developer whitelist ...")
 		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
@@ -95,7 +110,7 @@ func main() {
 		}
 	}
 
-	// 6. Export index to JSON file if specified
+	// 7. Export index to JSON file if specified
 	if *exportFlag != "" {
 		fmt.Printf("💾 Exporting full search index to: %s ...\n", *exportFlag)
 		if err := idx.ExportJSON(*exportFlag); err != nil {
@@ -108,7 +123,7 @@ func main() {
 		}
 	}
 
-	// 7. Direct CLI Search Mode
+	// 8. Direct CLI Search Mode
 	if *queryFlag != "" {
 		start := time.Now()
 		results := idx.Search(*queryFlag, *tagFlag, 10)
@@ -130,17 +145,29 @@ func main() {
 		os.Exit(0)
 	}
 
-	// 8. Server Mode (Local-First HTTP Daemon)
+	// 9. Server Mode (Local-First HTTP Daemon + Embedded Web UI)
 	srv := server.NewServer(idx, *portFlag, *tokenFlag)
+	if bmStore != nil {
+		srv.SetBookmarkStore(bmStore)
+	}
 
 	stats := idx.Stats()
-	fmt.Printf("🚀 search %s Engine Ready!\n", version)
+	localURL := fmt.Sprintf("http://127.0.0.1:%d", *portFlag)
+
+	fmt.Printf("\n╔══════════════════════════════════════════════════════════════╗\n")
+	fmt.Printf("║  🔍 search %s · High-Velocity Local-First Search Engine    ║\n", version)
+	fmt.Printf("╚══════════════════════════════════════════════════════════════╝\n")
 	fmt.Printf("📊 Indexed Documents: %d | Terms: %d | Words: %d\n", stats.TotalDocuments, stats.TotalTerms, stats.TotalWords)
+	if bmStore != nil {
+		fmt.Printf("🔒 Private Bookmarks:  %d stored locally\n", len(bmStore.List()))
+	}
 	fmt.Printf("🔒 API Auth Token:     %s\n", srv.APIToken())
-	fmt.Printf("🌐 Local Endpoint:     http://127.0.0.1:%d\n", *portFlag)
+	fmt.Printf("🌐 Local Endpoint:     %s\n", localURL)
 	fmt.Printf("   Endpoints:          GET  /health\n")
 	fmt.Printf("                       GET  /api/search?q=...&tag=...&limit=...\n")
 	fmt.Printf("                       GET  /api/stats\n")
+	fmt.Printf("                       GET  /api/bookmarks\n")
+	fmt.Printf("                       POST /api/bookmarks (Local/Token Auth)\n")
 	fmt.Printf("                       POST /api/index (Bearer Auth required)\n\n")
 
 	// Graceful Shutdown
@@ -152,6 +179,21 @@ func main() {
 			log.Fatalf("Fatal server error: %v", err)
 		}
 	}()
+
+	// Desktop GUI Mode
+	shouldLaunchGUI := *guiFlag || (!*serveFlag && os.Getenv("DISPLAY") != "")
+	if shouldLaunchGUI {
+		go func() {
+			time.Sleep(150 * time.Millisecond) // Wait for HTTP server bind
+			title := fmt.Sprintf("search %s · Jeremy Benz", version)
+			if err := runNativeGUI(localURL, title); err != nil {
+				log.Printf("Desktop GUI note: %v\n", err)
+			} else {
+				// User closed the desktop window
+				stopChan <- os.Interrupt
+			}
+		}()
+	}
 
 	<-stopChan
 	fmt.Println("\nShutting down search engine gracefully...")
