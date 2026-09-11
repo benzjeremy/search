@@ -1,0 +1,37 @@
+name: Update Search Index Database
+
+on:
+  schedule:
+    - cron: '0 3 * * 0' # Every Sunday at 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout web branch
+        uses: actions/checkout@v4
+        with:
+          ref: web
+
+      - name: Validate & Format Database
+        run: |
+          python3 -c "
+          import json, sys
+          with open('database.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          print(f'Indexed items count: {len(data)}')
+          with open('database.json', 'w', encoding='utf-8') as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
+          "
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add database.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore(data): auto-refresh and validate search index database"
+          git push origin web || echo "No changes to push"

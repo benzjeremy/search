@@ -1,98 +1,15 @@
 /**
- * search — High-Velocity Ecosystem & Local Full-Text Search Engine
- * Pure Vanilla JavaScript | Zero External Dependencies
- * Matches the Go BM25 Engine Logic (Okapi BM25, k1=1.2, b=0.75)
+ * search — Genuine Open-Source Web & Ecosystem Search Engine
+ * 100% Client-Side on GitHub Pages | Zero Telemetry | Pure Vanilla JS
+ * Combines Okapi BM25 ranking, Wikipedia Knowledge Cards, DuckDuckGo answers,
+ * Hacker News tech index, URL tracking sanitizer, and private IndexedDB bookmarks.
  * Author: Jeremy Benz (@benzjeremy)
  */
 
 (function () {
   'use strict';
 
-  // --- Search Corpus (Jeremy Benz Ecosystem & Knowledge) ---
-  const CORPUS = [
-    {
-      id: 'root-hub',
-      title: 'Jeremy Benz — Zentraler Hub & Open-Source Profil',
-      url: 'https://benzjeremy.github.io/',
-      category: 'hub',
-      tags: ['hub', 'go', 'security', 'portfolio', 'standards'],
-      content: 'Offizielle Hauptseite von Jeremy Benz (@benzjeremy), 17-jähriger Go Systems Developer aus Deutschland. High-Velocity VibeCoding mit kompromisslosen Ingenieursstandards, echter Kryptografie (AES-256-GCM, PBKDF2 mindestens 100.000 Iterationen) und ohne Electron-Ballast. Übersicht über alle Projekte und Philosophie.'
-    },
-    {
-      id: 'untis-go',
-      title: 'untis-go — Schneller nativer WebUntis Desktop Client in Go',
-      url: 'https://benzjeremy.github.io/untis-go/',
-      category: 'tools',
-      tags: ['go', 'desktop', 'untis', 'gtk', 'awesome-go', 'linux', 'windows'],
-      content: 'Der blitzschnelle, native WebUntis Desktop Client für Linux und Windows. Synchrones Zeitraster, Live-Countdown bis Schulschluss, Offline-Cache, System-Tray und minimale Ressourcennutzung. Aufgenommen in Awesome-Go (#6660). Lizenziert unter GPL-3.0.'
-    },
-    {
-      id: 'docklite',
-      title: 'docklite — Radikal schlanke Portainer-Alternative in Go & Astro',
-      url: 'https://benzjeremy.github.io/docklite/',
-      category: 'tools',
-      tags: ['go', 'docker', 'devops', 'monitoring', 'astro', 'awesome-go', 'sse'],
-      content: 'Radikal schlanke Portainer-Alternative in Go und Astro. Eine einzige Standalone-Binary, direkte docker.sock Kommunikation ohne Daemon-Overhead und ca. 10–15 MB RAM-Verbrauch. Live Server-Sent Events (SSE) Metriken, Container Logs und Lifecycle-Management. Aufgenommen in Awesome-Go (#6665).'
-    },
-    {
-      id: 'spotify-screensaver',
-      title: 'spotify-screensaver — Nativer Desktop Bildschirmschoner',
-      url: 'https://benzjeremy.github.io/spotify-screensaver/',
-      category: 'tools',
-      tags: ['go', 'spotify', 'screensaver', 'visualizer', 'dbus', 'mpris', 'awesome-go'],
-      content: 'Eleganter nativer Bildschirmschoner für Spotify unter Linux und Windows. Hardwarebeschleunigter Audio-Visualizer, OLED-Digitaluhr, MPRIS D-Bus Steuerung, 100% Local-First ohne externe Cloud-Abhängigkeiten. Aufgenommen in Awesome-Go (#6675). Lizenziert unter GPL-3.0.'
-    },
-    {
-      id: 'agi-research',
-      title: 'Functional AGI Research — Empirische Benchmark-Suite & SEAN',
-      url: 'https://benzjeremy.github.io/agi-research/',
-      category: 'research',
-      tags: ['ai', 'agi', 'research', 'benchmarks', 'neuro-symbolic', 'paper'],
-      content: 'Wissenschaftliches Forschungspapier und empirische Benchmark-Suite zum Nachweis funktioneller künstlicher Allgemeinintelligenz (F-AGI). 13 deterministische Benchmarks, Self-Evolving Agent Networks (SEAN), neuro-symbolische Verifikation und Epistemic Robustness.'
-    },
-    {
-      id: 'wetter-site',
-      title: 'wetter-site — Moderne Wetter-Station & Telemetrie',
-      url: 'https://benzjeremy.github.io/wetter-site/',
-      category: 'showcases',
-      tags: ['web', 'weather', 'open-meteo', 'canvas', 'telemetry', 'privacy'],
-      content: 'Blitzschnelle, datenschutzfreundliche Wetter-Station von Jeremy Benz. Live-Wetterdaten via Open-Meteo API, pure Canvas 24h-Temperaturgraphen (°C, °F, K), 7-Tage-Trend und Standortabfrage. 100% client-side ohne Tracking.'
-    },
-    {
-      id: 'binchrii',
-      title: 'binchrii — Gaming & Variety Streamer Showcase',
-      url: 'https://benzjeremy.github.io/binchrii/',
-      category: 'showcases',
-      tags: ['web', 'streaming', 'twitch', 'gaming', 'showcase'],
-      content: 'Offizielle Webpräsenz für Streamer binchrii. Twitch-Stream-Einbindung mit 2-Klick-Datenschutz, Sendeplan, interaktive Soundeffekte, Chat-Befehle und Community-Regeln.'
-    },
-    {
-      id: 'itsbenzo-tv',
-      title: 'itsbenzo-tv — Gaming & Streaming Hub',
-      url: 'https://benzjeremy.github.io/itsbenzo-tv/',
-      category: 'showcases',
-      tags: ['web', 'streaming', 'twitch', 'community'],
-      content: 'Offizieller Streaming- und Gaming-Hub von itsbenzo. Sendeplan, Social Links, Soundboard und Community Discord Integration.'
-    },
-    {
-      id: 'security-standards',
-      title: 'Second Brain Coding & Security Standards — Jeremy Benz',
-      url: 'https://benzjeremy.github.io/#philosophie',
-      category: 'security',
-      tags: ['security', 'standards', 'crypto', 'aes-256', 'pbkdf2', 'architecture'],
-      content: 'Echte Sicherheit und Zero-Dummy-Security: AES-256-GCM Verschlüsselung, PBKDF2 mit mindestens 100.000 Iterationen, CSRF-Tokens, Strict Local-First Binding (127.0.0.1, niemals 0.0.0.0), DNS-Rebinding Schutz und WebKitGTK anstelle von schwerfälligem Electron.'
-    },
-    {
-      id: 'search-engine',
-      title: 'search — Ultra-fast Privacy Search Engine in Go',
-      url: 'https://benzjeremy.github.io/search/',
-      category: 'tools',
-      tags: ['search', 'go', 'bm25', 'privacy', 'engine', 'crawler'],
-      content: 'Suchmaschine für lokale Dateien und das Jeremy Benz Ökosystem. BM25 Ranking, invertierter Volltext-Index, Levenshtein Fuzzy-Matching, REST API mit Token-Authentifizierung und Zero Telemetry.'
-    }
-  ];
-
-  // Stopwords
+  // --- Stopwords Filter (German & English) ---
   const STOPWORDS = new Set([
     'aber', 'als', 'am', 'an', 'auch', 'auf', 'aus', 'bei', 'bin', 'bis', 'bist', 'da', 'damit',
     'dann', 'das', 'dass', 'dein', 'deine', 'dem', 'den', 'der', 'des', 'die', 'dies', 'diese',
@@ -118,7 +35,47 @@
     return rawTokens.filter(t => !STOPWORDS.has(t) && t.length > 1);
   }
 
-  // --- BM25 Engine Implementation ---
+  function levenshtein(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  // --- URL Privacy Sanitizer ---
+  function sanitizeURL(rawURL) {
+    if (!rawURL) return '';
+    try {
+      const u = new URL(rawURL);
+      const paramsToStrip = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'ref', 'ref_src', 'aff', 'aff_id'];
+      paramsToStrip.forEach(p => u.searchParams.delete(p));
+      for (const key of Array.from(u.searchParams.keys())) {
+        if (key.startsWith('utm_') || key.startsWith('aff_')) {
+          u.searchParams.delete(key);
+        }
+      }
+      return u.toString();
+    } catch (e) {
+      return rawURL;
+    }
+  }
+
+  // --- Client-Side Okapi BM25 Search Engine ---
   class ClientBM25Engine {
     constructor(k1 = 1.2, b = 0.75) {
       this.k1 = k1;
@@ -136,7 +93,7 @@
       let totalTokens = 0;
 
       corpus.forEach((doc, idx) => {
-        const fullText = `${doc.title} ${doc.content} ${doc.tags.join(' ')}`;
+        const fullText = `${doc.title} ${doc.content} ${(doc.tags || []).join(' ')}`;
         const tokens = tokenize(fullText);
         this.docLengths[idx] = tokens.length;
         totalTokens += tokens.length;
@@ -156,9 +113,12 @@
     search(query, categoryFilter = '') {
       const qTokens = tokenize(query);
       if (qTokens.length === 0) {
-        // If empty query, show all or filtered items by default
         return this.docs
-          .map((doc, idx) => ({ doc, score: 1.0, matches: [], snippet: doc.content.slice(0, 160) + '...' }))
+          .map((doc) => ({
+            doc,
+            score: doc.category === 'ecosystem' ? 2.0 : 1.0,
+            snippet: doc.content ? doc.content.slice(0, 160) + '...' : ''
+          }))
           .filter(item => !categoryFilter || item.doc.category === categoryFilter);
       }
 
@@ -169,10 +129,10 @@
       qTokens.forEach(qTerm => {
         let postings = this.index.get(qTerm);
 
-        // Prefix match fallback if exact term isn't indexed
+        // Prefix and typo fallback
         if (!postings) {
           for (let [term, p] of this.index.entries()) {
-            if (term.startsWith(qTerm)) {
+            if (term.startsWith(qTerm) || (qTerm.length >= 4 && levenshtein(qTerm, term) <= 1)) {
               postings = p;
               break;
             }
@@ -196,14 +156,19 @@
           const denominator = tf + this.k1 * (1 - this.b + this.b * (docLen / this.avgdl));
           let termScore = safeIDF * (numerator / denominator);
 
-          // Boost if in title
-          if (doc.title.toLowerCase().includes(qTerm)) {
-            termScore *= 2.2;
+          // Boost if title matches
+          if (doc.title && doc.title.toLowerCase().includes(qTerm)) {
+            termScore *= 2.5;
           }
 
-          // Boost if in tags
-          if (doc.tags.some(t => t.toLowerCase() === qTerm)) {
+          // Boost if tag matches
+          if (doc.tags && doc.tags.some(t => t.toLowerCase() === qTerm)) {
             termScore *= 1.8;
+          }
+
+          // Boost Jeremy Benz Ecosystem projects
+          if (doc.category === 'ecosystem') {
+            termScore *= 1.4;
           }
 
           scores.set(docIdx, (scores.get(docIdx) || 0) + termScore);
@@ -216,11 +181,9 @@
       const results = [];
       for (let [docIdx, score] of scores.entries()) {
         const doc = this.docs[docIdx];
-        const matches = Array.from(matchMap.get(docIdx) || []);
         results.push({
           doc,
           score: Math.round(score * 100) / 100,
-          matches,
           snippet: this.generateSnippet(doc.content, qTokens)
         });
       }
@@ -229,7 +192,44 @@
       return results;
     }
 
+    suggest(prefix, limit = 6) {
+      if (!prefix) return [];
+      const p = prefix.toLowerCase().trim();
+      const suggestions = new Set();
+
+      // Check document titles
+      for (const doc of this.docs) {
+        if (doc.title && doc.title.toLowerCase().includes(p)) {
+          suggestions.add(doc.title.split('—')[0].trim());
+          if (suggestions.size >= limit) return Array.from(suggestions);
+        }
+      }
+
+      // Check tags
+      for (const doc of this.docs) {
+        if (doc.tags) {
+          for (const tag of doc.tags) {
+            if (tag.toLowerCase().startsWith(p)) {
+              suggestions.add(tag);
+              if (suggestions.size >= limit) return Array.from(suggestions);
+            }
+          }
+        }
+      }
+
+      // Check indexed terms
+      for (const term of this.index.keys()) {
+        if (term.startsWith(p) && term.length > p.length) {
+          suggestions.add(term);
+          if (suggestions.size >= limit) return Array.from(suggestions);
+        }
+      }
+
+      return Array.from(suggestions);
+    }
+
     generateSnippet(content, terms) {
+      if (!content) return '';
       if (content.length <= 160) return content;
       const lower = content.toLowerCase();
       let bestPos = -1;
@@ -254,7 +254,7 @@
     }
   }
 
-  // --- IndexedDB Local Bookmark Vault ---
+  // --- IndexedDB Bookmark Vault ---
   const DB_NAME = 'JeremyBenz_Search_DB';
   const DB_VERSION = 1;
   const STORE_NAME = 'bookmarks';
@@ -283,8 +283,7 @@
         req.onsuccess = () => resolve(req.result || []);
         req.onerror = () => reject(req.error);
       });
-    } catch(err) {
-      console.warn('IndexedDB not accessible:', err);
+    } catch (e) {
       return [];
     }
   }
@@ -311,145 +310,493 @@
     });
   }
 
-  // --- UI Controller ---
-  const engine = new ClientBM25Engine();
-  let activeCategory = '';
-  let privateModeActive = localStorage.getItem('search_private_mode') === 'true';
-  let privateBookmarks = [];
+  // --- State & Settings Management ---
+  const state = {
+    engine: new ClientBM25Engine(),
+    databaseLoaded: false,
+    activeTab: 'all', // all, web, ecosystem, news, bookmarks
+    lang: localStorage.getItem('search_lang') || 'de',
+    theme: localStorage.getItem('search_theme') || 'dark',
+    bookmarks: [],
+    settings: {
+      srcWiki: localStorage.getItem('search_src_wiki') !== 'false',
+      srcDDG: localStorage.getItem('search_src_ddg') !== 'false',
+      srcHN: localStorage.getItem('search_src_hn') !== 'false',
+      stripTracking: localStorage.getItem('search_strip_tracking') !== 'false',
+      braveKey: localStorage.getItem('search_brave_key') || '',
+      searxngURL: localStorage.getItem('search_searxng_url') || ''
+    },
+    liveCache: new Map()
+  };
 
-  function reindexCorpus() {
-    let combined = [...CORPUS];
-    if (privateModeActive) {
-      const converted = privateBookmarks.map(bm => ({
-        id: 'bm-' + bm.id,
+  // --- External Live Web Search APIs ---
+
+  // 1. Wikipedia Summary API (CORS friendly)
+  async function fetchWikipediaCard(query, lang = 'de') {
+    if (!state.settings.srcWiki || !query) return null;
+    const cacheKey = `wiki_${lang}_${query.toLowerCase()}`;
+    if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
+
+    try {
+      const endpoint = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+      const res = await fetch(endpoint, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data.extract) return null;
+
+      const card = {
+        title: data.title,
+        subtitle: data.description || (lang === 'de' ? 'Wikipedia-Artikel' : 'Wikipedia Article'),
+        extract: data.extract,
+        url: data.content_urls ? data.content_urls.desktop.page : `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(data.title)}`,
+        imageUrl: data.thumbnail ? data.thumbnail.source : '',
+        source: 'Wikipedia'
+      };
+      state.liveCache.set(cacheKey, card);
+      return card;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 2. DuckDuckGo Instant Answer API
+  async function fetchDuckDuckGo(query) {
+    if (!state.settings.srcDDG || !query) return { card: null, items: [] };
+    const cacheKey = `ddg_${query.toLowerCase()}`;
+    if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
+
+    try {
+      const endpoint = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1`;
+      const res = await fetch(endpoint);
+      if (!res.ok) return { card: null, items: [] };
+      const data = await res.json();
+
+      let card = null;
+      if (data.AbstractText && data.Heading) {
+        card = {
+          title: data.Heading,
+          subtitle: data.AbstractSource || 'DuckDuckGo Instant Answer',
+          extract: data.AbstractText,
+          url: sanitizeURL(data.AbstractURL),
+          imageUrl: data.Image,
+          source: 'DuckDuckGo'
+        };
+      }
+
+      const items = [];
+      if (Array.isArray(data.RelatedTopics)) {
+        data.RelatedTopics.slice(0, 5).forEach(topic => {
+          if (topic.Text && topic.FirstURL) {
+            const parts = topic.Text.split(' - ');
+            items.push({
+              title: parts[0],
+              url: sanitizeURL(topic.FirstURL),
+              content: topic.Text,
+              source: 'DuckDuckGo',
+              category: 'web',
+              badge: 'DuckDuckGo',
+              tags: ['web', 'instant']
+            });
+          }
+        });
+      }
+
+      const result = { card, items };
+      state.liveCache.set(cacheKey, result);
+      return result;
+    } catch (e) {
+      return { card: null, items: [] };
+    }
+  }
+
+  // 3. Hacker News Algolia Search API (CORS friendly)
+  async function fetchHackerNews(query) {
+    if (!state.settings.srcHN || !query) return [];
+    const cacheKey = `hn_${query.toLowerCase()}`;
+    if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
+
+    try {
+      const endpoint = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(query)}&hitsPerPage=6`;
+      const res = await fetch(endpoint);
+      if (!res.ok) return [];
+      const data = await res.json();
+
+      const items = [];
+      if (Array.isArray(data.hits)) {
+        data.hits.forEach(hit => {
+          if (!hit.title) return;
+          const targetUrl = hit.url || hit.story_url || `https://news.ycombinator.com/item?id=${hit.objectID}`;
+          items.push({
+            title: hit.title,
+            url: sanitizeURL(targetUrl),
+            content: `Hacker News Diskussion von @${hit.author || 'dev'} · ${hit.points || 0} Punkte · ${hit.num_comments || 0} Kommentare`,
+            source: 'Hacker News',
+            category: 'news',
+            badge: 'Hacker News',
+            tags: ['tech', 'news', 'hacker-news']
+          });
+        });
+      }
+
+      state.liveCache.set(cacheKey, items);
+      return items;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 4. Brave Search API (If user provided custom API key)
+  async function fetchBraveSearch(query) {
+    if (!state.settings.braveKey || !query) return [];
+    try {
+      const endpoint = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=6`;
+      const res = await fetch(endpoint, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Subscription-Token': state.settings.braveKey
+        }
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      const items = [];
+      if (data.web && Array.isArray(data.web.results)) {
+        data.web.results.forEach(r => {
+          items.push({
+            title: r.title,
+            url: sanitizeURL(r.url),
+            content: r.description,
+            source: 'Brave Search',
+            category: 'web',
+            badge: 'Brave',
+            tags: ['web']
+          });
+        });
+      }
+      return items;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  const DEFAULT_CORPUS = [
+    {
+      id: 'root-hub',
+      title: 'Jeremy Benz — Zentraler Hub & Offizielles Profil',
+      url: 'https://benzjeremy.github.io/',
+      category: 'ecosystem',
+      source: 'Jeremy Benz Ökosystem',
+      tags: ['hub', 'go', 'security', 'portfolio', 'standards'],
+      content: 'Offizieller zentraler Hub und Profil von Jeremy Benz (@benzjeremy), Systems Developer aus Deutschland. High-Velocity VibeCoding mit kompromisslosen Ingenieursstandards, echter Kryptografie (AES-256-GCM, PBKDF2 mindestens 100.000 Iterationen), Zero-Dummy-Security und ohne Electron-Ballast.'
+    },
+    {
+      id: 'untis-go',
+      title: 'untis-go — Schneller nativer WebUntis Desktop Client in Go & GTK',
+      url: 'https://benzjeremy.github.io/untis-go/',
+      category: 'ecosystem',
+      source: 'Jeremy Benz Ökosystem',
+      tags: ['go', 'desktop', 'untis', 'gtk', 'awesome-go', 'linux', 'windows'],
+      content: 'Der blitzschnelle, native WebUntis Desktop Client für Linux und Windows, entwickelt von Jeremy Benz. Synchrones Zeitraster, Live-Countdown bis Schulschluss, Offline-Cache, System-Tray und minimale Ressourcennutzung (< 15 MB RAM). Aufgenommen in Awesome-Go (#6660).'
+    },
+    {
+      id: 'docklite',
+      title: 'docklite — Radikal schlanke Portainer-Alternative in Go & Astro',
+      url: 'https://benzjeremy.github.io/docklite/',
+      category: 'ecosystem',
+      source: 'Jeremy Benz Ökosystem',
+      tags: ['go', 'docker', 'devops', 'monitoring', 'astro', 'awesome-go', 'sse'],
+      content: 'Radikal schlanke Portainer-Alternative in Go und Astro. Eine einzige Standalone-Binary, direkte docker.sock Kommunikation ohne Daemon-Overhead und ca. 10–15 MB RAM-Verbrauch. Aufgenommen in Awesome-Go (#6665).'
+    },
+    {
+      id: 'spotify-screensaver',
+      title: 'spotify-screensaver — Nativer Desktop Bildschirmschoner mit Visualizer',
+      url: 'https://benzjeremy.github.io/spotify-screensaver/',
+      category: 'ecosystem',
+      source: 'Jeremy Benz Ökosystem',
+      tags: ['go', 'spotify', 'screensaver', 'visualizer', 'dbus', 'mpris', 'awesome-go'],
+      content: 'Eleganter nativer Bildschirmschoner für Spotify unter Linux und Windows. Hardwarebeschleunigter Audio-Visualizer, OLED-Digitaluhr, MPRIS D-Bus Steuerung, 100% Local-First ohne externe Cloud-Abhängigkeiten. Aufgenommen in Awesome-Go (#6675).'
+    },
+    {
+      id: 'search',
+      title: 'search — Offene Web- & Ökosystem-Suchmaschine ohne Tracking',
+      url: 'https://benzjeremy.github.io/search/',
+      category: 'ecosystem',
+      source: 'Jeremy Benz Ökosystem',
+      tags: ['search', 'privacy', 'websearch', 'wikipedia', 'duckduckgo', 'bm25'],
+      content: 'Die datenschutzfreundliche, blitzschnelle Open-Source Web-Suchmaschine von Jeremy Benz. Föderierte Websuche (Wikipedia, DuckDuckGo, Hacker News), Okapi BM25 Ranking, IndexedDB Lesezeichentresor und URL-Tracking-Sanitizer.'
+    }
+  ];
+
+  // --- Initial Database & Bookmarks Loader ---
+  async function loadDatabase() {
+    // Immediately index default corpus so search works with 0 ms latency
+    reindexAll(DEFAULT_CORPUS);
+
+    try {
+      const res = await fetch('database.json');
+      if (res.ok) {
+        const data = await res.json();
+        reindexAll(data);
+        state.databaseLoaded = true;
+      }
+    } catch (e) {
+      console.warn('Could not load database.json, using default corpus:', e);
+    }
+  }
+
+  async function loadBookmarks() {
+    state.bookmarks = await idbGetAllBookmarks();
+    if (state.databaseLoaded) {
+      reindexAll();
+    }
+  }
+
+  function reindexAll(baseDocs = null) {
+    let docs = baseDocs || state.engine.docs.filter(d => !d.isBookmark);
+    if (state.bookmarks && state.bookmarks.length > 0) {
+      const bmDocs = state.bookmarks.map(bm => ({
+        id: 'bm_' + bm.id,
         title: bm.title,
         url: bm.url,
-        category: 'private',
-        tags: ['privat', 'lesezeichen', ...(bm.tags || [])],
         content: `${bm.title} ${bm.url} ${bm.notes || ''}`,
-        isPrivate: true,
+        tags: ['privat', 'lesezeichen', ...(bm.tags || [])],
+        category: 'bookmarks',
+        source: 'Privates Lesezeichen',
+        isBookmark: true,
         rawBM: bm
       }));
-      combined = [...combined, ...converted];
+      docs = [...docs, ...bmDocs];
     }
-    engine.indexCorpus(combined);
-    executeSearch();
+    state.engine.indexCorpus(docs);
   }
 
-  async function reloadPrivateBookmarks() {
-    privateBookmarks = await idbGetAllBookmarks();
-    reindexCorpus();
+  // --- UI Controller & Rendering ---
+
+  function applyTheme(theme) {
+    let effective = theme;
+    if (theme === 'auto') {
+      effective = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', effective);
+    const icon = document.getElementById('theme-icon');
+    const label = document.getElementById('theme-label');
+    if (icon && label) {
+      icon.textContent = effective === 'dark' ? '🌙' : '☀️';
+      label.textContent = effective === 'dark' 
+        ? (state.lang === 'de' ? 'Dunkel' : 'Dark')
+        : (state.lang === 'de' ? 'Hell' : 'Light');
+    }
+    localStorage.setItem('search_theme', theme);
   }
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    initSearchUI();
-    initMobileNav();
-    initKeyboardShortcuts();
-    initQuickQueries();
-    initCopyButtons();
-    initPrivateModeUI();
-    await reloadPrivateBookmarks();
-  });
+  window.setLang = function (lang) {
+    state.lang = lang;
+    document.documentElement.lang = lang;
+    localStorage.setItem('search_lang', lang);
 
-  function initSearchUI() {
-    const input = document.getElementById('search-input');
-    const clearBtn = document.getElementById('search-clear');
-    const categoryPills = document.querySelectorAll('.category-pill');
-
-    if (input) {
-      input.addEventListener('input', () => {
-        if (clearBtn) {
-          clearBtn.style.display = input.value.trim() ? 'flex' : 'none';
-        }
-        executeSearch();
-      });
-    }
-
-    if (clearBtn && input) {
-      clearBtn.addEventListener('click', () => {
-        input.value = '';
-        clearBtn.style.display = 'none';
-        input.focus();
-        executeSearch();
-      });
-    }
-
-    categoryPills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        categoryPills.forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        activeCategory = pill.getAttribute('data-cat') || '';
-        executeSearch();
-      });
+    document.querySelectorAll('#lang-de-btn, #lang-en-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
     });
-  }
 
-  function executeSearch() {
+    // Update all text nodes with data-lang attributes
+    document.querySelectorAll('[data-lang-de]').forEach(el => {
+      const txt = lang === 'de' ? el.getAttribute('data-lang-de') : el.getAttribute('data-lang-en');
+      if (txt) el.innerHTML = txt;
+    });
+
+    // Update placeholders
+    document.querySelectorAll('[data-placeholder-de]').forEach(el => {
+      const ph = lang === 'de' ? el.getAttribute('data-placeholder-de') : el.getAttribute('data-placeholder-en');
+      if (ph) el.setAttribute('placeholder', ph);
+    });
+
+    // Re-render search if input has value
+    executeSearch();
+  };
+
+  // Execute Search Aggregator
+  async function executeSearch() {
     const input = document.getElementById('search-input');
+    const query = input ? input.value.trim() : '';
     const resultsContainer = document.getElementById('search-results');
+    const knowledgeSidebar = document.getElementById('knowledge-sidebar');
+    const knowledgeCardEl = document.getElementById('knowledge-card');
     const countBadge = document.getElementById('results-count');
     const latencyBadge = document.getElementById('results-latency');
-    if (!resultsContainer) return;
+    const clearBtn = document.getElementById('search-clear');
 
-    const query = input ? input.value.trim() : '';
-    const startTime = performance.now();
-    const results = engine.search(query, activeCategory);
-    const elapsed = performance.now() - startTime;
-
-    if (latencyBadge) {
-      const displayTime = elapsed < 1 ? `${Math.round(elapsed * 1000)} µs` : `${elapsed.toFixed(2)} ms`;
-      latencyBadge.textContent = `⚡ ${displayTime}`;
+    if (clearBtn) {
+      clearBtn.style.display = query ? 'flex' : 'none';
     }
+
+    updateFallbackLinks(query);
+
+    const startTime = performance.now();
+
+    // 1. In-memory BM25 query over database.json and bookmarks
+    const localHits = state.engine.search(query, state.activeTab === 'all' ? '' : state.activeTab);
+
+    // 2. If online and searching web/news/all, fetch live federated sources
+    let liveCard = null;
+    let liveWebItems = [];
+
+    if (query && state.activeTab !== 'bookmarks' && state.activeTab !== 'ecosystem') {
+      const [wikiCard, ddgResult, hnItems, braveItems] = await Promise.all([
+        fetchWikipediaCard(query, state.lang),
+        fetchDuckDuckGo(query),
+        fetchHackerNews(query),
+        fetchBraveSearch(query)
+      ]);
+
+      liveCard = wikiCard || (ddgResult ? ddgResult.card : null);
+      if (ddgResult && ddgResult.items) liveWebItems.push(...ddgResult.items);
+      if (hnItems && hnItems.length) liveWebItems.push(...hnItems);
+      if (braveItems && braveItems.length) liveWebItems.push(...braveItems);
+    }
+
+    const elapsed = performance.now() - startTime;
+    if (latencyBadge) {
+      latencyBadge.textContent = `⚡ ${elapsed < 1 ? Math.round(elapsed * 1000) + ' µs' : elapsed.toFixed(2) + ' ms'}`;
+    }
+
+    // Render Knowledge Card
+    if (liveCard && knowledgeSidebar && knowledgeCardEl) {
+      knowledgeSidebar.style.display = 'block';
+      knowledgeCardEl.innerHTML = `
+        ${liveCard.imageUrl ? `<img src="${escapeHTML(liveCard.imageUrl)}" alt="${escapeHTML(liveCard.title)}" class="knowledge-image" loading="lazy">` : ''}
+        <h3 class="knowledge-title">${escapeHTML(liveCard.title)}</h3>
+        <div class="knowledge-subtitle">${escapeHTML(liveCard.subtitle)}</div>
+        <p class="knowledge-desc">${escapeHTML(liveCard.extract)}</p>
+        <div class="knowledge-footer">
+          <span class="knowledge-source">${escapeHTML(liveCard.source)}</span>
+          <a href="${escapeHTML(liveCard.url)}" target="_blank" rel="noopener noreferrer">${state.lang === 'de' ? 'Vollständigen Artikel lesen →' : 'Read full article →'}</a>
+        </div>
+      `;
+    } else if (knowledgeSidebar) {
+      knowledgeSidebar.style.display = 'none';
+    }
+
+    // Combine results
+    const combined = [];
+    const seenURLs = new Set();
+
+    // Add local hits
+    localHits.forEach(hit => {
+      const cleanU = sanitizeURL(hit.doc.url);
+      if (!seenURLs.has(cleanU)) {
+        seenURLs.add(cleanU);
+        combined.push({
+          title: hit.doc.title,
+          url: cleanU,
+          content: hit.snippet || hit.doc.content,
+          category: hit.doc.category,
+          badge: hit.doc.isBookmark ? 'Lesezeichen' : (hit.doc.category === 'ecosystem' ? 'Jeremy Benz Ökosystem' : 'Web Index'),
+          isBookmark: hit.doc.isBookmark,
+          rawBM: hit.doc.rawBM,
+          score: hit.score
+        });
+      }
+    });
+
+    // Add live web hits
+    liveWebItems.forEach(item => {
+      const cleanU = sanitizeURL(item.url);
+      if (!seenURLs.has(cleanU)) {
+        seenURLs.add(cleanU);
+        combined.push({
+          title: item.title,
+          url: cleanU,
+          content: item.content,
+          category: item.category,
+          badge: item.badge || 'Web',
+          isBookmark: false
+        });
+      }
+    });
+
+    // Filter by active tab if specific
+    const filtered = combined.filter(item => {
+      if (state.activeTab === 'all') return true;
+      if (state.activeTab === 'web') return item.category === 'web';
+      if (state.activeTab === 'ecosystem') return item.category === 'ecosystem';
+      if (state.activeTab === 'news') return item.category === 'news';
+      if (state.activeTab === 'bookmarks') return item.isBookmark;
+      return true;
+    });
 
     if (countBadge) {
-      countBadge.textContent = `${results.length} Treffer`;
+      countBadge.textContent = state.lang === 'de' 
+        ? `${filtered.length} Ergebnisse gefunden` 
+        : `${filtered.length} results found`;
     }
 
-    if (results.length === 0) {
+    if (!resultsContainer) return;
+
+    if (filtered.length === 0) {
       resultsContainer.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">🔍</div>
-          <h3>Keine Suchergebnisse gefunden</h3>
-          <p>Für die Abfrage <code>${escapeHTML(query)}</code> wurden im Ökosystem keine Treffer ermittelt. Versuche allgemeinere Begriffe oder filtere nach Kategorien.</p>
+          <h3>${state.lang === 'de' ? 'Keine Treffer gefunden' : 'No results found'}</h3>
+          <p>${state.lang === 'de' 
+            ? `Für die Abfrage <code>${escapeHTML(query)}</code> wurden keine Treffer ermittelt. Probiere die 1-Click Fallbacks zu Google oder DuckDuckGo oben aus.`
+            : `No matching items found for <code>${escapeHTML(query)}</code>. Try one of the 1-click search fallbacks above.`}
+          </p>
         </div>
       `;
       return;
     }
 
-    resultsContainer.innerHTML = results.map(res => {
-      const highlightedSnippet = highlightSnippet(res.snippet, query ? tokenize(query) : []);
-      const tagsHTML = res.doc.tags.map(t => `<span class="res-tag">#${escapeHTML(t)}</span>`).join(' ');
-      const privateBadge = res.doc.isPrivate ? `<span class="p-badge-private">🔒 Privat / Lesezeichen</span>` : '';
-      const privateClass = res.doc.isPrivate ? ' is-private' : '';
-      const deleteBtn = res.doc.isPrivate ? `<button type="button" class="btn-delete-bm" data-bmid="${res.doc.rawBM.id}" title="Lesezeichen löschen">🗑️ Löschen</button>` : '';
+    const qTokens = tokenize(query);
+
+    resultsContainer.innerHTML = filtered.map(item => {
+      const highlightedSnippet = highlightSnippet(item.content, qTokens);
+      const badgeClass = getBadgeClass(item.badge);
+      const domain = getDomain(item.url);
+
+      const bookmarkAction = item.isBookmark
+        ? `<button type="button" class="result-action-btn btn-del-bm" data-bmid="${item.rawBM.id}">🗑️ ${state.lang === 'de' ? 'Löschen' : 'Delete'}</button>`
+        : `<button type="button" class="result-action-btn btn-save-bm" data-title="${escapeHTML(item.title)}" data-url="${escapeHTML(item.url)}">⭐ ${state.lang === 'de' ? 'Als Lesezeichen' : 'Bookmark'}</button>`;
 
       return `
-        <article class="search-result-card${privateClass}">
-          <div class="card-top">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <a href="${escapeHTML(res.doc.url)}" class="result-title" target="_blank" rel="noopener">
-                ${escapeHTML(res.doc.title)}
-                <svg class="external-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-              </a>
-              ${privateBadge}
-            </div>
-            <span class="score-pill" title="Okapi BM25 Ranking Score">BM25: ${res.score.toFixed(2)}</span>
+        <article class="result-item">
+          <div class="result-header">
+            <span class="result-breadcrumb">${escapeHTML(domain)}</span>
+            <span class="result-badge ${badgeClass}">${escapeHTML(item.badge)}</span>
           </div>
-          <div class="result-url">${escapeHTML(res.doc.url)}</div>
+          <a href="${escapeHTML(item.url)}" class="result-title" target="_blank" rel="noopener noreferrer">
+            ${escapeHTML(item.title)}
+          </a>
           <p class="result-snippet">${highlightedSnippet}</p>
-          <div class="card-meta">
-            <div class="tags-container">${tagsHTML}</div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              ${deleteBtn}
-              <a href="${escapeHTML(res.doc.url)}" target="_blank" rel="noopener" class="direct-link-btn">Öffnen →</a>
-            </div>
+          <div class="result-actions">
+            ${bookmarkAction}
+            <button type="button" class="result-action-btn btn-copy-url" data-url="${escapeHTML(item.url)}">📋 ${state.lang === 'de' ? 'Link kopieren' : 'Copy link'}</button>
+            <a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer" class="result-action-btn">↗ ${state.lang === 'de' ? 'Öffnen' : 'Open'}</a>
           </div>
         </article>
       `;
     }).join('');
   }
 
+  function getBadgeClass(badge) {
+    if (badge.includes('Ökosystem') || badge.includes('Ecosystem')) return 'badge-ecosystem';
+    if (badge.includes('Wikipedia')) return 'badge-wiki';
+    if (badge.includes('Hacker News')) return 'badge-hn';
+    if (badge.includes('Lesezeichen') || badge.includes('Bookmark')) return 'badge-private';
+    return 'badge-web';
+  }
+
+  function getDomain(urlStr) {
+    try {
+      const u = new URL(urlStr);
+      return u.hostname + (u.pathname !== '/' ? u.pathname : '');
+    } catch (e) {
+      return urlStr;
+    }
+  }
+
   function highlightSnippet(snippet, tokens) {
+    if (!snippet) return '';
     if (!tokens || tokens.length === 0) return escapeHTML(snippet);
     let escaped = escapeHTML(snippet);
     tokens.forEach(tok => {
@@ -460,7 +807,8 @@
   }
 
   function escapeHTML(str) {
-    return str.replace(/[&<>'"]/g, tag => ({
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, tag => ({
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',
@@ -473,103 +821,304 @@
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  function initKeyboardShortcuts() {
-    const input = document.getElementById('search-input');
-    window.addEventListener('keydown', (e) => {
-      if ((e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) && document.activeElement !== input) {
-        e.preventDefault();
-        input.focus();
-        input.select();
-      } else if (e.key === 'Escape' && document.activeElement === input) {
-        input.blur();
+  function updateFallbackLinks(query) {
+    const q = query ? encodeURIComponent(query) : '';
+    document.querySelectorAll('.fallback-chip').forEach(chip => {
+      const engine = chip.getAttribute('data-engine');
+      switch (engine) {
+        case 'google':
+          chip.href = q ? `https://www.google.com/search?q=${q}` : 'https://www.google.com/';
+          break;
+        case 'duckduckgo':
+          chip.href = q ? `https://duckduckgo.com/?q=${q}` : 'https://duckduckgo.com/';
+          break;
+        case 'startpage':
+          chip.href = q ? `https://www.startpage.com/sp/search?query=${q}` : 'https://www.startpage.com/';
+          break;
+        case 'brave':
+          chip.href = q ? `https://search.brave.com/search?q=${q}` : 'https://search.brave.com/';
+          break;
+        case 'wikipedia':
+          chip.href = q ? `https://${state.lang}.wikipedia.org/w/index.php?search=${q}` : `https://${state.lang}.wikipedia.org/`;
+          break;
+        case 'github':
+          chip.href = q ? `https://github.com/search?q=${q}` : 'https://github.com/';
+          break;
       }
     });
   }
 
-  function initQuickQueries() {
-    document.querySelectorAll('.quick-query-btn').forEach(btn => {
+  // --- Autocomplete Suggestions ---
+  function initSuggestions() {
+    const input = document.getElementById('search-input');
+    const dropdown = document.getElementById('suggestions-dropdown');
+    if (!input || !dropdown) return;
+
+    input.addEventListener('input', () => {
+      const val = input.value.trim();
+      if (!val) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      const suggestions = state.engine.suggest(val, 5);
+      if (suggestions.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      dropdown.innerHTML = suggestions.map(s => `
+        <div class="suggestion-item" data-val="${escapeHTML(s)}">
+          <svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>${escapeHTML(s)}</span>
+        </div>
+      `).join('');
+      dropdown.style.display = 'block';
+    });
+
+    dropdown.addEventListener('click', (e) => {
+      const item = e.target.closest('.suggestion-item');
+      if (item) {
+        input.value = item.getAttribute('data-val');
+        dropdown.style.display = 'none';
+        input.focus();
+        executeSearch();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target) && e.target !== input) {
+        dropdown.style.display = 'none';
+      }
+    });
+  }
+
+  // --- Event Listeners & Modals ---
+  function initEvents() {
+    const input = document.getElementById('search-input');
+    const clearBtn = document.getElementById('search-clear');
+    const btnSearchWeb = document.getElementById('btn-search-web');
+    const btnSearchLucky = document.getElementById('btn-search-lucky');
+    const themeBtn = document.getElementById('btn-theme-toggle');
+
+    // Debounced search input
+    let debounceTimer = null;
+    if (input) {
+      input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          executeSearch();
+        }, 120);
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          clearTimeout(debounceTimer);
+          document.getElementById('suggestions-dropdown').style.display = 'none';
+          executeSearch();
+        }
+      });
+    }
+
+    if (clearBtn && input) {
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.style.display = 'none';
+        document.getElementById('suggestions-dropdown').style.display = 'none';
+        input.focus();
+        executeSearch();
+      });
+    }
+
+    if (btnSearchWeb && input) {
+      btnSearchWeb.addEventListener('click', () => {
+        executeSearch();
+      });
+    }
+
+    if (btnSearchLucky && input) {
+      btnSearchLucky.addEventListener('click', () => {
+        state.activeTab = 'ecosystem';
+        document.querySelectorAll('.category-tab').forEach(t => {
+          t.classList.toggle('active', t.getAttribute('data-tab') === 'ecosystem');
+        });
+        executeSearch();
+      });
+    }
+
+    // Theme Toggle
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const next = state.theme === 'dark' ? 'light' : 'dark';
+        state.theme = next;
+        applyTheme(next);
+      });
+    }
+
+    // Category Tabs
+    document.querySelectorAll('.category-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        state.activeTab = tab.getAttribute('data-tab');
+
+        const privateBar = document.getElementById('private-actions-bar');
+        if (privateBar) {
+          privateBar.style.display = state.activeTab === 'bookmarks' ? 'flex' : 'none';
+        }
+
+        executeSearch();
+      });
+    });
+
+    // Quick tag buttons
+    document.querySelectorAll('.quick-tag-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const query = btn.getAttribute('data-q');
-        const input = document.getElementById('search-input');
         if (input) {
-          input.value = query;
-          const clearBtn = document.getElementById('search-clear');
-          if (clearBtn) clearBtn.style.display = 'flex';
+          input.value = btn.getAttribute('data-q');
           input.focus();
           executeSearch();
         }
       });
     });
-  }
 
-  function initCopyButtons() {
-    document.querySelectorAll('.copy-cmd-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-copy-target');
-        const el = document.getElementById(targetId);
-        if (!el) return;
-        navigator.clipboard.writeText(el.textContent.trim()).then(() => {
-          const orig = btn.textContent;
-          btn.textContent = '✓ Kopiert!';
-          setTimeout(() => { btn.textContent = orig; }, 2000);
-        });
-      });
-    });
-  }
-
-  function initMobileNav() {
-    const toggleBtn = document.getElementById('mobile-toggle');
-    const mainNav = document.getElementById('main-nav');
-    if (!toggleBtn || !mainNav) return;
-
-    toggleBtn.addEventListener('click', () => {
-      const isOpen = mainNav.classList.toggle('open');
-      toggleBtn.setAttribute('aria-expanded', isOpen);
-      toggleBtn.innerHTML = isOpen ? '✕' : '☰';
-    });
-
-    mainNav.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (mainNav.classList.contains('open')) {
-          mainNav.classList.remove('open');
-          toggleBtn.setAttribute('aria-expanded', 'false');
-          toggleBtn.innerHTML = '☰';
-        }
-      });
-    });
-
-    document.addEventListener('click', (e) => {
-      if (mainNav.classList.contains('open') && !mainNav.contains(e.target) && !toggleBtn.contains(e.target)) {
-        mainNav.classList.remove('open');
-        toggleBtn.setAttribute('aria-expanded', 'false');
-        toggleBtn.innerHTML = '☰';
+    // Keyboard Shortcuts (/ or Ctrl+K to search)
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) && document.activeElement !== input) {
+        e.preventDefault();
+        input.focus();
+        input.select();
+      } else if (e.key === 'Escape') {
+        if (document.activeElement === input) input.blur();
+        document.getElementById('suggestions-dropdown').style.display = 'none';
+        closeAllModals();
       }
     });
-  }
 
-  function initPrivateModeUI() {
-    const toggleBtn = document.getElementById('btn-private-mode');
-    const statusText = document.getElementById('private-mode-status');
+    // Results Click Delegation (Bookmark, Copy Link, Delete)
+    const resultsContainer = document.getElementById('search-results');
+    if (resultsContainer) {
+      resultsContainer.addEventListener('click', async (e) => {
+        // Copy link
+        const copyBtn = e.target.closest('.btn-copy-url');
+        if (copyBtn) {
+          const u = copyBtn.getAttribute('data-url');
+          await navigator.clipboard.writeText(u);
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = state.lang === 'de' ? '✓ Kopiert!' : '✓ Copied!';
+          setTimeout(() => { copyBtn.textContent = originalText; }, 1800);
+          return;
+        }
 
-    function updateToggleUI() {
-      if (!toggleBtn || !statusText) return;
-      toggleBtn.classList.toggle('active', privateModeActive);
-      statusText.textContent = privateModeActive ? 'Aktiv' : 'Inaktiv';
-      localStorage.setItem('search_private_mode', privateModeActive ? 'true' : 'false');
-    }
+        // Save as bookmark
+        const saveBmBtn = e.target.closest('.btn-save-bm');
+        if (saveBmBtn) {
+          const title = saveBmBtn.getAttribute('data-title');
+          const url = saveBmBtn.getAttribute('data-url');
+          const bm = {
+            id: 'bm_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
+            title,
+            url,
+            tags: ['gespeichert'],
+            notes: '',
+            createdAt: new Date().toISOString()
+          };
+          await idbSaveBookmark(bm);
+          await loadBookmarks();
+          saveBmBtn.textContent = state.lang === 'de' ? '✓ Gespeichert!' : '✓ Saved!';
+          setTimeout(() => { saveBmBtn.textContent = state.lang === 'de' ? '⭐ Als Lesezeichen' : '⭐ Bookmark'; }, 2000);
+          return;
+        }
 
-    if (toggleBtn) {
-      updateToggleUI();
-      toggleBtn.addEventListener('click', () => {
-        privateModeActive = !privateModeActive;
-        updateToggleUI();
-        reindexCorpus();
+        // Delete bookmark
+        const delBmBtn = e.target.closest('.btn-del-bm');
+        if (delBmBtn) {
+          const bmid = delBmBtn.getAttribute('data-bmid');
+          if (confirm(state.lang === 'de' ? 'Lesezeichen wirklich entfernen?' : 'Delete bookmark?')) {
+            await idbDeleteBookmark(bmid);
+            await loadBookmarks();
+            executeSearch();
+          }
+        }
       });
     }
 
-    // Modal 1: Add Bookmark
+    // Settings Modal
+    initSettingsModal();
+
+    // Bookmarks Modal
+    initBookmarksModals();
+
+    // Mobile Navigation Drawer
+    initMobileNav();
+  }
+
+  function closeAllModals() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+  }
+
+  function initSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    const openBtn = document.getElementById('btn-open-settings');
+    const closeBtn = document.getElementById('settings-modal-close');
+    const cancelBtn = document.getElementById('settings-cancel-btn');
+    const saveBtn = document.getElementById('settings-save-btn');
+
+    if (openBtn && modal) {
+      openBtn.addEventListener('click', () => {
+        // Load current values
+        document.getElementById('setting-theme').value = state.theme;
+        document.getElementById('setting-lang').value = state.lang;
+        document.getElementById('setting-src-wiki').checked = state.settings.srcWiki;
+        document.getElementById('setting-src-ddg').checked = state.settings.srcDDG;
+        document.getElementById('setting-src-hn').checked = state.settings.srcHN;
+        document.getElementById('setting-strip-tracking').checked = state.settings.stripTracking;
+        document.getElementById('setting-brave-key').value = state.settings.braveKey;
+        document.getElementById('setting-searxng-url').value = state.settings.searxngURL;
+        modal.classList.add('open');
+      });
+    }
+
+    const close = () => modal && modal.classList.remove('open');
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (cancelBtn) cancelBtn.addEventListener('click', close);
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        const theme = document.getElementById('setting-theme').value;
+        const lang = document.getElementById('setting-lang').value;
+        const srcWiki = document.getElementById('setting-src-wiki').checked;
+        const srcDDG = document.getElementById('setting-src-ddg').checked;
+        const srcHN = document.getElementById('setting-src-hn').checked;
+        const stripTracking = document.getElementById('setting-strip-tracking').checked;
+        const braveKey = document.getElementById('setting-brave-key').value.trim();
+        const searxngURL = document.getElementById('setting-searxng-url').value.trim();
+
+        state.theme = theme;
+        applyTheme(theme);
+
+        state.settings = { srcWiki, srcDDG, srcHN, stripTracking, braveKey, searxngURL };
+        localStorage.setItem('search_src_wiki', srcWiki);
+        localStorage.setItem('search_src_ddg', srcDDG);
+        localStorage.setItem('search_src_hn', srcHN);
+        localStorage.setItem('search_strip_tracking', stripTracking);
+        localStorage.setItem('search_brave_key', braveKey);
+        localStorage.setItem('search_searxng_url', searxngURL);
+
+        if (lang !== state.lang) {
+          window.setLang(lang);
+        } else {
+          executeSearch();
+        }
+
+        close();
+      });
+    }
+  }
+
+  function initBookmarksModals() {
+    // Add modal
     const bmModal = document.getElementById('bm-modal');
-    const openAddBtn = document.getElementById('btn-open-add-bm');
+    const openAddBtn = document.getElementById('btn-add-bookmark');
     const closeAddBtn = document.getElementById('bm-modal-close');
     const cancelAddBtn = document.getElementById('bm-cancel-btn');
     const bmForm = document.getElementById('bm-form');
@@ -577,25 +1126,25 @@
     if (openAddBtn && bmModal) {
       openAddBtn.addEventListener('click', () => {
         bmModal.classList.add('open');
-        const titleInput = document.getElementById('bm-title');
-        if (titleInput) titleInput.focus();
+        document.getElementById('bm-title').focus();
       });
     }
-    const closeBmModal = () => { if (bmModal) bmModal.classList.remove('open'); };
-    if (closeAddBtn) closeAddBtn.addEventListener('click', closeBmModal);
-    if (cancelAddBtn) cancelAddBtn.addEventListener('click', closeBmModal);
+
+    const closeAdd = () => bmModal && bmModal.classList.remove('open');
+    if (closeAddBtn) closeAddBtn.addEventListener('click', closeAdd);
+    if (cancelAddBtn) cancelAddBtn.addEventListener('click', closeAdd);
 
     if (bmForm) {
       bmForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('bm-title').value.trim();
         const url = document.getElementById('bm-url').value.trim();
-        const tagsRaw = document.getElementById('bm-tags').value.trim();
+        const rawTags = document.getElementById('bm-tags').value.trim();
         const notes = document.getElementById('bm-notes').value.trim();
+        const tags = rawTags ? rawTags.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-        const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
         const bm = {
-          id: 'bm_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+          id: 'bm_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
           title: title || url,
           url,
           tags,
@@ -605,34 +1154,15 @@
 
         await idbSaveBookmark(bm);
         bmForm.reset();
-        closeBmModal();
-
-        if (!privateModeActive) {
-          privateModeActive = true;
-          updateToggleUI();
-        }
-        await reloadPrivateBookmarks();
+        closeAdd();
+        await loadBookmarks();
+        executeSearch();
       });
     }
 
-    // Event delegation for delete buttons in search results
-    const resultsContainer = document.getElementById('search-results');
-    if (resultsContainer) {
-      resultsContainer.addEventListener('click', async (e) => {
-        const delBtn = e.target.closest('.btn-delete-bm');
-        if (delBtn) {
-          const bmid = delBtn.getAttribute('data-bmid');
-          if (bmid && confirm('Möchtest du dieses private Lesezeichen wirklich löschen?')) {
-            await idbDeleteBookmark(bmid);
-            await reloadPrivateBookmarks();
-          }
-        }
-      });
-    }
-
-    // Modal 2: Sync / Export / Import
+    // Sync / Backup Modal
     const syncModal = document.getElementById('sync-modal');
-    const openSyncBtn = document.getElementById('btn-open-sync-bm');
+    const openSyncBtn = document.getElementById('btn-sync-bookmarks');
     const closeSyncBtn = document.getElementById('sync-modal-close');
     const exportBtn = document.getElementById('btn-export-json');
     const importBtn = document.getElementById('btn-import-json');
@@ -641,21 +1171,20 @@
     if (openSyncBtn && syncModal) {
       openSyncBtn.addEventListener('click', () => {
         syncModal.classList.add('open');
-        if (jsonArea) {
-          jsonArea.value = JSON.stringify(privateBookmarks, null, 2);
-        }
+        if (jsonArea) jsonArea.value = JSON.stringify(state.bookmarks, null, 2);
       });
     }
-    const closeSync = () => { if (syncModal) syncModal.classList.remove('open'); };
+
+    const closeSync = () => syncModal && syncModal.classList.remove('open');
     if (closeSyncBtn) closeSyncBtn.addEventListener('click', closeSync);
 
     if (exportBtn && jsonArea) {
       exportBtn.addEventListener('click', () => {
-        jsonArea.value = JSON.stringify(privateBookmarks, null, 2);
+        jsonArea.value = JSON.stringify(state.bookmarks, null, 2);
         navigator.clipboard.writeText(jsonArea.value).then(() => {
           const orig = exportBtn.textContent;
-          exportBtn.textContent = '✓ Kopiert!';
-          setTimeout(() => { exportBtn.textContent = orig; }, 2000);
+          exportBtn.textContent = state.lang === 'de' ? '✓ Kopiert!' : '✓ Copied!';
+          setTimeout(() => { exportBtn.textContent = orig; }, 1800);
         });
       });
     }
@@ -664,14 +1193,11 @@
       importBtn.addEventListener('click', async () => {
         try {
           const parsed = JSON.parse(jsonArea.value.trim());
-          if (!Array.isArray(parsed)) {
-            alert('Ungültiges Format: JSON muss ein Array von Lesezeichen sein.');
-            return;
-          }
+          if (!Array.isArray(parsed)) throw new Error('JSON muss ein Array sein');
           for (const item of parsed) {
             if (item.url) {
               await idbSaveBookmark({
-                id: item.id || ('bm_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5)),
+                id: item.id || ('bm_' + Date.now().toString(36)),
                 title: item.title || item.url,
                 url: item.url,
                 tags: item.tags || [],
@@ -681,36 +1207,38 @@
             }
           }
           closeSync();
-          if (!privateModeActive) {
-            privateModeActive = true;
-            updateToggleUI();
-          }
-          await reloadPrivateBookmarks();
-          alert(`✓ ${parsed.length} Lesezeichen erfolgreich importiert!`);
-        } catch(err) {
-          alert('Fehler beim Importieren: ' + err.message);
+          await loadBookmarks();
+          executeSearch();
+          alert(state.lang === 'de' ? `✓ ${parsed.length} Lesezeichen importiert!` : `✓ ${parsed.length} bookmarks imported!`);
+        } catch (err) {
+          alert((state.lang === 'de' ? 'Import fehlgeschlagen: ' : 'Import failed: ') + err.message);
         }
       });
     }
   }
 
-  // Language switch
-  window.setLang = function(lang) {
-    document.querySelectorAll('[data-lang]').forEach(el => {
-      el.classList.toggle('visible', el.getAttribute('data-lang') === lang);
-    });
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.textContent.trim().toLowerCase() === lang);
-    });
-    document.documentElement.lang = lang;
-    try { localStorage.setItem('pref_lang', lang); } catch(e) {}
-  };
+  function initMobileNav() {
+    const toggle = document.getElementById('mobile-toggle');
+    const nav = document.getElementById('main-nav');
+    if (!toggle || !nav) return;
 
-  try {
-    const saved = localStorage.getItem('pref_lang');
-    if (saved && (saved === 'de' || saved === 'en')) {
-      window.setLang(saved);
-    }
-  } catch(e) {}
+    toggle.addEventListener('click', () => {
+      const open = nav.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open);
+      toggle.textContent = open ? '✕' : '☰';
+    });
+  }
+
+  // --- Application Bootstrap ---
+  document.addEventListener('DOMContentLoaded', async () => {
+    applyTheme(state.theme);
+    window.setLang(state.lang);
+    initSuggestions();
+    initEvents();
+
+    await loadDatabase();
+    await loadBookmarks();
+    executeSearch();
+  });
 
 })();
