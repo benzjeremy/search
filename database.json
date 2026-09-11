@@ -5,7 +5,14 @@
     "url": "https://benzjeremy.github.io/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["hub", "go", "security", "portfolio", "standards", "developer"],
+    "tags": [
+      "hub",
+      "go",
+      "security",
+      "portfolio",
+      "standards",
+      "developer"
+    ],
     "content": "Offizieller zentraler Hub und Profil von Jeremy Benz (@benzjeremy), Systems Developer aus Deutschland. High-Velocity VibeCoding mit kompromisslosen Ingenieursstandards, echter Kryptografie (AES-256-GCM, PBKDF2 mindestens 100.000 Iterationen), Zero-Dummy-Security und ohne Electron-Ballast. Übersicht über alle Projekte, Roadmaps und Philosophie."
   },
   {
@@ -14,7 +21,16 @@
     "url": "https://benzjeremy.github.io/untis-go/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["go", "desktop", "untis", "gtk", "awesome-go", "linux", "windows", "school"],
+    "tags": [
+      "go",
+      "desktop",
+      "untis",
+      "gtk",
+      "awesome-go",
+      "linux",
+      "windows",
+      "school"
+    ],
     "content": "Der blitzschnelle, native WebUntis Desktop Client für Linux und Windows, entwickelt von Jeremy Benz. Synchrones Zeitraster, Live-Countdown bis Schulschluss, Offline-Cache, System-Tray und minimale Ressourcennutzung (< 15 MB RAM). Offiziell aufgenommen in Awesome-Go (#6660). Lizenziert unter GPL-3.0."
   },
   {
@@ -23,7 +39,16 @@
     "url": "https://benzjeremy.github.io/docklite/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["go", "docker", "devops", "monitoring", "astro", "awesome-go", "sse", "containers"],
+    "tags": [
+      "go",
+      "docker",
+      "devops",
+      "monitoring",
+      "astro",
+      "awesome-go",
+      "sse",
+      "containers"
+    ],
     "content": "Radikal schlanke Portainer-Alternative in Go und Astro. Eine einzige Standalone-Binary, direkte docker.sock Kommunikation ohne Daemon-Overhead und ca. 10–15 MB RAM-Verbrauch. Live Server-Sent Events (SSE) Metriken, Container Logs und Lifecycle-Management. Offiziell aufgenommen in Awesome-Go (#6665)."
   },
   {
@@ -32,7 +57,16 @@
     "url": "https://benzjeremy.github.io/spotify-screensaver/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["go", "spotify", "screensaver", "visualizer", "dbus", "mpris", "awesome-go", "audio"],
+    "tags": [
+      "go",
+      "spotify",
+      "screensaver",
+      "visualizer",
+      "dbus",
+      "mpris",
+      "awesome-go",
+      "audio"
+    ],
     "content": "Eleganter nativer Bildschirmschoner für Spotify unter Linux und Windows. Hardwarebeschleunigter Audio-Visualizer, OLED-Digitaluhr, MPRIS D-Bus Steuerung, 100% Local-First ohne externe Cloud-Abhängigkeiten. Offiziell aufgenommen in Awesome-Go (#6675). Lizenziert unter GPL-3.0."
   },
   {
@@ -41,7 +75,15 @@
     "url": "https://benzjeremy.github.io/search/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["search", "privacy", "websearch", "wikipedia", "duckduckgo", "bm25", "open-source"],
+    "tags": [
+      "search",
+      "privacy",
+      "websearch",
+      "wikipedia",
+      "duckduckgo",
+      "bm25",
+      "open-source"
+    ],
     "content": "Die datenschutzfreundliche, blitzschnelle Open-Source Web-Suchmaschine von Jeremy Benz. Kombiniert föderierte Websuche (Wikipedia Knowledge Panels, DuckDuckGo Instant Answers, Hacker News Tech Index), client-seitiges BM25-Ranking, IndexedDB Lesezeichen-Tresor, URL-Tracking-Sanitizer und 1-Click Fallbacks zu Google, Startpage und DuckDuckGo."
   },
   {
@@ -50,7 +92,15 @@
     "url": "https://benzjeremy.github.io/agi-research/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["ai", "agi", "research", "benchmarks", "neuro-symbolic", "paper", "sean"],
+    "tags": [
+      "ai",
+      "agi",
+      "research",
+      "benchmarks",
+      "neuro-symbolic",
+      "paper",
+      "sean"
+    ],
     "content": "Wissenschaftliches Forschungspapier und empirische Benchmark-Suite zum Nachweis funktioneller künstlicher Allgemeinintelligenz (F-AGI). 13 deterministische Benchmarks, Self-Evolving Agent Networks (SEAN), neuro-symbolische Verifikation und Epistemic Robustness."
   },
   {
@@ -59,7 +109,15 @@
     "url": "https://benzjeremy.github.io/wetter-site/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["web", "weather", "open-meteo", "canvas", "telemetry", "privacy", "charts"],
+    "tags": [
+      "web",
+      "weather",
+      "open-meteo",
+      "canvas",
+      "telemetry",
+      "privacy",
+      "charts"
+    ],
     "content": "Blitzschnelle, datenschutzfreundliche Wetter-Station von Jeremy Benz. Live-Wetterdaten via Open-Meteo API, pure Canvas 24h-Temperaturgraphen (°C, °F, K), 7-Tage-Trend und Standortabfrage. 100% client-side ohne Tracking und ohne Cookies."
   },
   {
@@ -68,7 +126,14 @@
     "url": "https://benzjeremy.github.io/binchrii/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["web", "streaming", "twitch", "gaming", "showcase", "community"],
+    "tags": [
+      "web",
+      "streaming",
+      "twitch",
+      "gaming",
+      "showcase",
+      "community"
+    ],
     "content": "Offizielle Webpräsenz für Streamer binchrii. Twitch-Stream-Einbindung mit 2-Klick-Datenschutz, Sendeplan, interaktive Soundeffekte, Chat-Befehle und Community-Regeln."
   },
   {
@@ -77,7 +142,13 @@
     "url": "https://benzjeremy.github.io/itsbenzo-tv/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["web", "streaming", "twitch", "community", "social"],
+    "tags": [
+      "web",
+      "streaming",
+      "twitch",
+      "community",
+      "social"
+    ],
     "content": "Offizieller Streaming- und Gaming-Hub von itsbenzo. Sendeplan, Social Links, Soundboard und Community Discord Integration."
   },
   {
@@ -86,7 +157,13 @@
     "url": "https://benzjeremy.github.io/status/",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["status", "monitoring", "uptime", "services", "health"],
+    "tags": [
+      "status",
+      "monitoring",
+      "uptime",
+      "services",
+      "health"
+    ],
     "content": "Zentrale Uptime- und Verfügbarkeitsseite für alle Dienste, Repositories, APIs und Webseiten im Jeremy Benz Ökosystem. Live Health-Checks, Latenzmessungen und Incident-History."
   },
   {
@@ -95,7 +172,15 @@
     "url": "https://benzjeremy.github.io/#philosophie",
     "category": "ecosystem",
     "source": "Jeremy Benz Ökosystem",
-    "tags": ["security", "standards", "crypto", "aes-256", "pbkdf2", "architecture", "zero-dummy"],
+    "tags": [
+      "security",
+      "standards",
+      "crypto",
+      "aes-256",
+      "pbkdf2",
+      "architecture",
+      "zero-dummy"
+    ],
     "content": "Echte Sicherheit und Zero-Dummy-Security: AES-256-GCM Verschlüsselung, PBKDF2 mit mindestens 100.000 Iterationen, CSRF-Tokens, Strict Local-First Binding (127.0.0.1, niemals 0.0.0.0), DNS-Rebinding Schutz und WebKitGTK anstelle von schwerfälligem Electron."
   },
   {
@@ -104,7 +189,14 @@
     "url": "https://go.dev/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["golang", "programming", "backend", "concurrency", "systems", "google"],
+    "tags": [
+      "golang",
+      "programming",
+      "backend",
+      "concurrency",
+      "systems",
+      "google"
+    ],
     "content": "Go ist eine von Google entwickelte Open-Source-Programmiersprache, mit der sich einfache, schnelle, zuverlässige und hocheffiziente Software erstellen lässt. Bietet erstklassige Nebenläufigkeit mit Goroutines und Channels sowie schnelle Kompilierzeiten."
   },
   {
@@ -113,7 +205,13 @@
     "url": "https://duckduckgo.com/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["search", "privacy", "duckduckgo", "browser", "tracker-blocking"],
+    "tags": [
+      "search",
+      "privacy",
+      "duckduckgo",
+      "browser",
+      "tracker-blocking"
+    ],
     "content": "DuckDuckGo ist eine führende Internetsuchmaschine, die die Privatsphäre ihrer Nutzer schützt, keine persönlichen Daten speichert, kein User-Profiling betreibt und keine personalisierte Werbung ausliefert."
   },
   {
@@ -122,7 +220,14 @@
     "url": "https://docs.searxng.org/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["searxng", "search", "meta-search", "privacy", "open-source", "self-hosted"],
+    "tags": [
+      "searxng",
+      "search",
+      "meta-search",
+      "privacy",
+      "open-source",
+      "self-hosted"
+    ],
     "content": "SearXNG ist eine freie, quelloffene und datenschutzfreundliche Meta-Suchmaschine, die Ergebnisse von über 70 verschiedenen Suchdiensten bündelt, ohne Nutzerdaten oder Suchhistorien zu protokollieren. Kann einfach selbst gehostet werden."
   },
   {
@@ -131,7 +236,13 @@
     "url": "https://www.startpage.com/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["search", "startpage", "privacy", "google", "proxy"],
+    "tags": [
+      "search",
+      "startpage",
+      "privacy",
+      "google",
+      "proxy"
+    ],
     "content": "Startpage liefert vollwertige Google-Suchergebnisse in voller Qualität, agiert jedoch als zwischengeschalteter Schutzschirm: keine IP-Protokollierung, keine Tracking-Cookies und anonyme Webseiten-Ansicht über den integrierten Anonymen Ansichts-Proxy."
   },
   {
@@ -140,7 +251,13 @@
     "url": "https://de.wikipedia.org/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["wiki", "knowledge", "encyclopedia", "open-content", "education"],
+    "tags": [
+      "wiki",
+      "knowledge",
+      "encyclopedia",
+      "open-content",
+      "education"
+    ],
     "content": "Wikipedia ist ein gemeinnütziges, freies Online-Nachschlagewerk, das von ehrenamtlichen Autoren in hunderten Sprachen erstellt und gepflegt wird. Bietet freies Wissen für die gesamte Menschheit ohne Paywalls oder kommerzielle Werbung."
   },
   {
@@ -149,7 +266,14 @@
     "url": "https://news.ycombinator.com/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["news", "tech", "startups", "programming", "discussions", "ycombinator"],
+    "tags": [
+      "news",
+      "tech",
+      "startups",
+      "programming",
+      "discussions",
+      "ycombinator"
+    ],
     "content": "Hacker News ist eine von Paul Graham gegründete Social-News-Webseite, die sich auf Themen rund um Informatik, Softwareentwicklung, IT-Sicherheit, Startups und geistige Schöpfungen konzentriert."
   },
   {
@@ -158,7 +282,14 @@
     "url": "https://github.com/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["git", "code", "open-source", "collaboration", "ci-cd", "repositories"],
+    "tags": [
+      "git",
+      "code",
+      "open-source",
+      "collaboration",
+      "ci-cd",
+      "repositories"
+    ],
     "content": "GitHub ist die weltweit größte webbasierte Hosting-Plattform für Software-Entwicklungsprojekte mit Versionsverwaltung über Git. Bietet Issue-Tracking, Pull Requests, Code Reviews und GitHub Actions CI/CD."
   },
   {
@@ -167,7 +298,14 @@
     "url": "https://developer.mozilla.org/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["html", "css", "javascript", "web-standards", "mozilla", "documentation"],
+    "tags": [
+      "html",
+      "css",
+      "javascript",
+      "web-standards",
+      "mozilla",
+      "documentation"
+    ],
     "content": "MDN Web Docs von Mozilla ist die führende und maßgebliche Dokumentationsplattform für offene Webtechnologien einschließlich HTML5, CSS3, JavaScript, Web APIs und moderne Browser-Spezifikationen."
   },
   {
@@ -176,7 +314,14 @@
     "url": "https://awesome-go.com/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["go", "awesome-go", "libraries", "tools", "curated", "open-source"],
+    "tags": [
+      "go",
+      "awesome-go",
+      "libraries",
+      "tools",
+      "curated",
+      "open-source"
+    ],
     "content": "Awesome Go ist eine handverlesene, hochangesehene Übersicht herausragender Go-Bibliotheken, CLI-Tools, Frameworks und Softwareprojekte, kuratiert nach strengen Qualitätskriterien und Code-Standards."
   },
   {
@@ -185,7 +330,13 @@
     "url": "https://www.docker.com/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["docker", "containers", "devops", "linux", "virtualization"],
+    "tags": [
+      "docker",
+      "containers",
+      "devops",
+      "linux",
+      "virtualization"
+    ],
     "content": "Docker ist eine offene Plattform für das Entwickeln, Ausliefern und Ausführen von Anwendungen in isolierten Software-Containern auf Linux, macOS und Windows."
   },
   {
@@ -194,7 +345,14 @@
     "url": "https://archlinux.org/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["linux", "arch", "distro", "rolling-release", "pacman", "kiss"],
+    "tags": [
+      "linux",
+      "arch",
+      "distro",
+      "rolling-release",
+      "pacman",
+      "kiss"
+    ],
     "content": "Arch Linux ist eine unabhängig entwickelte x86-64-orientierte Linux-Distribution nach dem KISS-Prinzip (Keep It Simple, Stupid) mit Rolling-Release-Modell, pacman-Paketmanager und dem Arch User Repository (AUR)."
   },
   {
@@ -203,7 +361,14 @@
     "url": "https://www.sqlite.org/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["database", "sql", "sqlite", "embedded", "c", "storage"],
+    "tags": [
+      "database",
+      "sql",
+      "sqlite",
+      "embedded",
+      "c",
+      "storage"
+    ],
     "content": "SQLite ist eine eigenständige, serverlose, konfigurationsfreie und transaktionssichere SQL-Datenbank-Engine in C. Sie speichert die gesamte Datenbank in einer einzigen Datei auf der Festplatte und benötigt null Wartungsaufwand."
   },
   {
@@ -212,7 +377,13 @@
     "url": "https://www.eff.org/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["privacy", "civil-liberties", "security", "encryption", "digital-rights"],
+    "tags": [
+      "privacy",
+      "civil-liberties",
+      "security",
+      "encryption",
+      "digital-rights"
+    ],
     "content": "Die Electronic Frontier Foundation ist die führende gemeinnützige Organisation zum Schutz der Privatsphäre, freien Meinungsäußerung, Verschlüsselung und Verbraucherrechte im Internet."
   },
   {
@@ -221,7 +392,13 @@
     "url": "https://signal.org/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["privacy", "messenger", "encryption", "open-source", "signal-protocol"],
+    "tags": [
+      "privacy",
+      "messenger",
+      "encryption",
+      "open-source",
+      "signal-protocol"
+    ],
     "content": "Signal ist ein Open-Source-Messenger mit staatlich geprüfter, lückenloser Ende-zu-Ende-Verschlüsselung (Signal-Protokoll). Speichert keine Metadaten, keine Kontakte auf Servern und sammelt keine Nutzerdaten."
   },
   {
@@ -230,7 +407,13 @@
     "url": "https://proton.me/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["privacy", "email", "vpn", "swiss", "zero-access-encryption"],
+    "tags": [
+      "privacy",
+      "email",
+      "vpn",
+      "swiss",
+      "zero-access-encryption"
+    ],
     "content": "Proton bietet Zero-Access-verschlüsselte E-Mail, Cloud-Speicher, VPN und Passwort-Manager mit Sitz in der Schweiz, geschützt durch einige der weltweit strengsten Datenschutzgesetze."
   },
   {
@@ -239,7 +422,14 @@
     "url": "https://open-meteo.com/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["weather", "api", "open-meteo", "open-data", "forecast", "free"],
+    "tags": [
+      "weather",
+      "api",
+      "open-meteo",
+      "open-data",
+      "forecast",
+      "free"
+    ],
     "content": "Open-Meteo ist eine quelloffene Wetter-API, die hochauflösende Wettervorhersagen nationaler Wetterdienste (DWD, NOAA, ECMWF) völlig kostenfrei und ohne verpflichtenden API-Key für nicht-kommerzielle Nutzung bereitstellt."
   },
   {
@@ -248,7 +438,14 @@
     "url": "https://www.radiosiegen.de/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["news", "local", "siegen", "radio", "germany", "media"],
+    "tags": [
+      "news",
+      "local",
+      "siegen",
+      "radio",
+      "germany",
+      "media"
+    ],
     "content": "Radio Siegen ist das Lokalradio für die Kreise Siegen-Wittgenstein und Olpe mit aktuellen Regionalnachrichten, Wetter, Verkehrsmeldungen und Livestream."
   },
   {
@@ -257,7 +454,14 @@
     "url": "https://thejocraft.de/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["gaming", "minecraft", "creator", "youtube", "media", "showcase"],
+    "tags": [
+      "gaming",
+      "minecraft",
+      "creator",
+      "youtube",
+      "media",
+      "showcase"
+    ],
     "content": "Offizielle Webseite von Content Creator Josef Heinrichs (TheJoCraft) mit Projekten, Videos, Server-Informationen und Community-Bereichen."
   },
   {
@@ -266,7 +470,289 @@
     "url": "https://search.brave.com/",
     "category": "web",
     "source": "Web Index",
-    "tags": ["search", "brave", "privacy", "independent-index", "zero-tracking"],
+    "tags": [
+      "search",
+      "brave",
+      "privacy",
+      "independent-index",
+      "zero-tracking"
+    ],
     "content": "Brave Search basiert auf einem vollständig eigenen, unabhängigen Web-Index, der Nutzer nicht verfolgt, Suchanfragen nicht speichert und keine personalisierten Werbeprofile erstellt."
+  },
+  {
+    "id": "ikea",
+    "title": "IKEA Deutschland — Möbel & Einrichtungsideen fürs Zuhause",
+    "url": "https://www.ikea.com/de/de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "ikea",
+      "moebel",
+      "einrichtung",
+      "wohnen",
+      "design",
+      "online-shop"
+    ],
+    "content": "IKEA ist das weltweit führende Einrichtungsunternehmen für funktionale, designorientierte und erschwingliche Möbel, Dekoration, Küchen und Wohnaccessoires."
+  },
+  {
+    "id": "adidas",
+    "title": "Adidas Offizielle Webseite & Online Shop",
+    "url": "https://www.adidas.de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "adidas",
+      "sport",
+      "schuhe",
+      "sneaker",
+      "bekleidung",
+      "fashion"
+    ],
+    "content": "Adidas ist der weltweit bekannte Sportartikelhersteller aus Herzogenaurach. Schuhe, Sneaker, Sportbekleidung und Ausrüstung für Fußball, Running und Lifestyle."
+  },
+  {
+    "id": "apple",
+    "title": "Apple (Deutschland) — iPhone, Mac, iPad, Watch & Zubehör",
+    "url": "https://www.apple.com/de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "apple",
+      "iphone",
+      "mac",
+      "ipad",
+      "hardware",
+      "ios",
+      "macos"
+    ],
+    "content": "Entdecke die innovative Welt von Apple: iPhone, iPad, Apple Watch, Mac und Apple TV sowie Zubehör, Unterhaltung und qualifizierten Gerätesupport."
+  },
+  {
+    "id": "microsoft",
+    "title": "Microsoft — Cloud, Computer, Apps & Gaming",
+    "url": "https://www.microsoft.com/de-de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "microsoft",
+      "windows",
+      "office",
+      "azure",
+      "cloud",
+      "xbox"
+    ],
+    "content": "Microsoft entwickelt Software, Cloud-Lösungen und Hardware: Windows 11, Microsoft 365, Azure Cloud Plattform, Surface-Geräte und Xbox Gaming."
+  },
+  {
+    "id": "google",
+    "title": "Google — Die weltweite Suchmaschine",
+    "url": "https://www.google.de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "google",
+      "search",
+      "suchmaschine",
+      "web",
+      "android",
+      "maps"
+    ],
+    "content": "Durchsuche das weltweite Internet mit Google. Schneller Zugriff auf Webseiten, Bilder, Videos, Nachrichten, Karten und globale Informationen."
+  },
+  {
+    "id": "youtube",
+    "title": "YouTube — Videos, Musik & Livestreams teilen",
+    "url": "https://www.youtube.com/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "youtube",
+      "video",
+      "streaming",
+      "musik",
+      "creator",
+      "media"
+    ],
+    "content": "YouTube ist die größte weltweite Video-Plattform für Videos, Tutorials, Musik, Podcasts, Gaming-Streams und Originalinhalte von YouTubern und Creators."
+  },
+  {
+    "id": "ffh",
+    "title": "HIT RADIO FFH — Radio für Hessen & aktuelle News",
+    "url": "https://www.ffh.de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "radio",
+      "ffh",
+      "hessen",
+      "musik",
+      "nachrichten",
+      "livestream",
+      "verkehr"
+    ],
+    "content": "HIT RADIO FFH ist einer der reichweitenstärksten privaten Radiosender in Deutschland mit aktuellen Hessen-Nachrichten, Webradio, Musik und Verkehrszentrum."
+  },
+  {
+    "id": "tagesschau",
+    "title": "tagesschau.de — Die erste Adresse für Nachrichten & Eilmeldungen",
+    "url": "https://www.tagesschau.de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "nachrichten",
+      "tagesschau",
+      "news",
+      "ard",
+      "politik",
+      "deutschland",
+      "welt"
+    ],
+    "content": "Die Tagesschau der ARD bietet rund um die Uhr verlässliche Nachrichten aus Politik, Wirtschaft, Inland, Ausland, Kultur und Sport im Web und per Livestream."
+  },
+  {
+    "id": "spiegel",
+    "title": "DER SPIEGEL — Aktuelle Nachrichten, Analysen & Hintergründe",
+    "url": "https://www.spiegel.de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "nachrichten",
+      "spiegel",
+      "journalismus",
+      "politik",
+      "wirtschaft",
+      "news"
+    ],
+    "content": "DER SPIEGEL ist eines der bedeutendsten deutschen Nachrichtenmagazine mit investigativen Recherchen, Reportagen, Meinungen und aktuellen Eilmeldungen."
+  },
+  {
+    "id": "heise-online",
+    "title": "heise online — IT-News, Tech-Trends & c't Magazin",
+    "url": "https://www.heise.de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "it",
+      "tech",
+      "hardware",
+      "software",
+      "security",
+      "ct",
+      "news"
+    ],
+    "content": "heise online ist das führende deutschsprachige IT-Nachrichtenportal mit aktuellen Meldungen zu Software, Hardware, Cybersecurity, Telekommunikation und Digitalpolitik."
+  },
+  {
+    "id": "golem",
+    "title": "Golem.de — IT-News für Profis, Entwickler & Nerds",
+    "url": "https://www.golem.de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "it",
+      "dev",
+      "golem",
+      "software",
+      "linux",
+      "hardware",
+      "science"
+    ],
+    "content": "Golem.de berichtet für professionelle Entwickler und IT-Entscheider über Open Source, Linux, Systemarchitektur, Künstliche Intelligenz und Netzpolitik."
+  },
+  {
+    "id": "stackoverflow",
+    "title": "Stack Overflow — Die globale Entwickler-Community für Fragen & Antworten",
+    "url": "https://stackoverflow.com/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "programming",
+      "coding",
+      "q&a",
+      "developer",
+      "software",
+      "debug"
+    ],
+    "content": "Stack Overflow ist die größte weltweite Frage-und-Antwort-Plattform für Programmierer mit Lösungen zu Code-Problemen in Go, Python, JavaScript, C++, Rust und mehr."
+  },
+  {
+    "id": "python-org",
+    "title": "Welcome to Python.org — Die Programmiersprache Python",
+    "url": "https://www.python.org/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "python",
+      "programming",
+      "ai",
+      "data-science",
+      "backend",
+      "open-source"
+    ],
+    "content": "Python ist eine universelle, leicht lesbare Programmiersprache für Webentwicklung, Data Science, künstliche Intelligenz, Machine Learning und System-Scripting."
+  },
+  {
+    "id": "rust-lang",
+    "title": "Rust Programming Language — Schnelle, speichersichere Systemprogrammierung",
+    "url": "https://www.rust-lang.org/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "rust",
+      "systems",
+      "memory-safety",
+      "concurrency",
+      "performance",
+      "open-source"
+    ],
+    "content": "Rust ist eine moderne Systemsprache, die kompromisslose Leistung mit garantierter Speichersicherheit ohne Garbage Collection verbindet."
+  },
+  {
+    "id": "minecraft",
+    "title": "Offizielle Minecraft-Webseite — Baue, erkunde und überlebe",
+    "url": "https://www.minecraft.net/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "minecraft",
+      "gaming",
+      "mojang",
+      "sandbox",
+      "survival",
+      "creative"
+    ],
+    "content": "Minecraft ist das meistverkaufte Sandbox-Videospiel von Mojang Studios. Baue unendliche Welten aus Blöcken, erkunde Dungeons und spiele gemeinsam im Multiplayer."
+  },
+  {
+    "id": "twitch",
+    "title": "Twitch — Live-Streaming-Plattform für Gaming, Musik & Talk",
+    "url": "https://www.twitch.tv/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "twitch",
+      "streaming",
+      "live",
+      "gaming",
+      "esports",
+      "community"
+    ],
+    "content": "Twitch ist die führende Live-Streaming-Plattform für Videospiele, E-Sport, Musik, Talkshows und interaktive Community-Events."
+  },
+  {
+    "id": "wetter-de",
+    "title": "Wetter.de — Wetterbericht, 14-Tage-Trend & Regenradar",
+    "url": "https://www.wetter.de/",
+    "category": "web",
+    "source": "Web Index",
+    "tags": [
+      "wetter",
+      "regenradar",
+      "vorhersage",
+      "temperatur",
+      "deutschland"
+    ],
+    "content": "Wetter.de bietet stundengenaue Wettervorhersagen für alle Orte in Deutschland, Regenradar, Unwetterwarnungen, Pollenflug und 14-Tage-Wetterausblick."
   }
 ]
