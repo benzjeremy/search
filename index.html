@@ -100,6 +100,10 @@
             <button type="button" id="search-clear" class="search-clear-btn" title="Eingabe leeren" style="display:none;">✕</button>
             <button type="submit" id="search-enter-btn" class="search-enter-btn" title="Suchen (Enter)" aria-label="Suchen">↵</button>
           </div>
+          <div class="hero-actions" id="hero-actions">
+            <button type="submit" id="btn-hero-search" class="btn-google-action" data-lang-de="Websuche" data-lang-en="Search">Websuche</button>
+            <button type="button" id="btn-hero-lucky" class="btn-google-action" data-lang-de="Auf gut Glück!" data-lang-en="I'm Feeling Lucky">Auf gut Glück!</button>
+          </div>
         </form>
 
         <!-- Autocomplete Suggestions Dropdown -->
@@ -108,13 +112,13 @@
 
     </section>
 
-    <!-- Results Section -->
-    <section class="results-wrapper" id="results-wrapper">
-      <!-- Status & Latency Bar -->
+    <!-- Results Section (Hidden until user presses Enter) -->
+    <section class="results-wrapper" id="results-wrapper" style="display:none;">
+      <!-- Status & Latency Bar (Google style) -->
       <div class="results-status-bar">
         <div class="status-left">
-          <span id="results-count" data-lang-de="Lade Suchindex..." data-lang-en="Loading search index...">Lade Suchindex...</span>
-          <span class="status-latency" id="results-latency">⚡ 0.00 ms</span>
+          <span id="results-count"></span>
+          <span class="status-latency" id="results-latency"></span>
         </div>
       </div>
 

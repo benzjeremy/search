@@ -494,6 +494,135 @@
     }
   }
 
+  // 6. Wikipedia External Links Harvester (Real web links from cited sources, company portals & news)
+  async function fetchWikipediaExtLinks(query, lang = 'de') {
+    if (!state.settings.srcWiki || !query) return [];
+    const cacheKey = `wikiext_${lang}_${query.toLowerCase()}`;
+    if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
+
+    try {
+      const url = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=2&prop=extlinks&ellimit=15&format=json&origin=*`;
+      const res = await fetchWithTimeout(url, {}, 400);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const pages = data.query?.pages || {};
+      const hits = [];
+      const seenDomains = new Set();
+      const ignoreHosts = ['archive.org', 'archive.today', 'toolforge.org', 'd-nb.info', 'viaf.org', 'wikidata.org', 'wikipedia.org', 'google.com', 'bing.com', 'loc.gov', 'bnf.fr', 'geohack.toolforge.org'];
+
+      for (const page of Object.values(pages)) {
+        if (!page.extlinks || !Array.isArray(page.extlinks)) continue;
+        for (const el of page.extlinks) {
+          const rawUrl = el['*'];
+          if (!rawUrl || !rawUrl.startsWith('http')) continue;
+          try {
+            const u = new URL(rawUrl);
+            const host = u.hostname.toLowerCase();
+            if (ignoreHosts.some(h => host.includes(h))) continue;
+            const domain = host.replace(/^www\./, '');
+            if (seenDomains.has(domain)) continue;
+            seenDomains.add(domain);
+
+            hits.push({
+              title: `${page.title} — ${domain}`,
+              url: sanitizeURL(rawUrl),
+              content: state.lang === 'de'
+                ? `Referenzierter Weblink und externe Quelle zu „${page.title}“ (${domain}).`
+                : `Referenced external web link and source for “${page.title}” (${domain}).`,
+              category: 'web',
+              source: domain,
+              isOfficial: false,
+              isPreHighlighted: false
+            });
+            if (hits.length >= 5) break;
+          } catch (e) {}
+        }
+        if (hits.length >= 5) break;
+      }
+
+      state.liveCache.set(cacheKey, hits);
+      return hits;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 7. DuckDuckGo Instant Answers & Topics (< 350ms, Native CORS)
+  async function fetchDuckDuckGoInstant(query, lang = 'de') {
+    if (!state.settings.srcDDG || !query) return [];
+    const cacheKey = `ddg_${query.toLowerCase()}`;
+    if (state.liveCache.has(cacheKey)) return state.liveCache.get(cacheKey);
+
+    try {
+      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`;
+      const res = await fetchWithTimeout(url, {}, 380);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const hits = [];
+
+      if (Array.isArray(data.Results)) {
+        data.Results.forEach(r => {
+          if (r.FirstURL && r.Text) {
+            hits.push({
+              title: r.Text,
+              url: sanitizeURL(r.FirstURL),
+              content: state.lang === 'de' ? 'Offizielle Antwort via DuckDuckGo.' : 'Instant answer via DuckDuckGo.',
+              category: 'web',
+              source: 'DuckDuckGo',
+              isOfficial: true,
+              isPreHighlighted: false
+            });
+          }
+        });
+      }
+
+      if (Array.isArray(data.RelatedTopics)) {
+        data.RelatedTopics.forEach(t => {
+          if (t.FirstURL && t.Text && !t.Topics) {
+            const cleanTitle = t.Text.split(' - ')[0] || t.Text;
+            hits.push({
+              title: cleanTitle,
+              url: sanitizeURL(t.FirstURL),
+              content: t.Text,
+              category: 'web',
+              source: 'DuckDuckGo',
+              isOfficial: false,
+              isPreHighlighted: false
+            });
+          }
+        });
+      }
+
+      const sliced = hits.slice(0, 4);
+      state.liveCache.set(cacheKey, sliced);
+      return sliced;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 8. Direct Domain / TLD Detection (Navigational queries like radiosiegen.de, ikea.com, thejocraft.de)
+  function detectDirectDomain(query) {
+    if (!query) return null;
+    const clean = query.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const domainPattern = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+(de|com|org|net|io|dev|app|info|eu|co|uk|fr|ch|at|nl|me|ai|tv|cc|fm)$/i;
+    if (domainPattern.test(clean)) {
+      const fullUrl = `https://${clean}/`;
+      return {
+        title: `${clean} — ${state.lang === 'de' ? 'Direkter Webauftritt' : 'Direct Website'}`,
+        url: fullUrl,
+        content: state.lang === 'de'
+          ? `Offizielle Webadresse für https://${clean}/. Direkt im Browser aufrufen.`
+          : `Official direct web address for https://${clean}/. Open directly in browser.`,
+        category: 'web',
+        source: clean,
+        isOfficial: true,
+        isPreHighlighted: false
+      };
+    }
+    return null;
+  }
+
   // --- Initial Database & Bookmarks Loader ---
   const DEFAULT_CORPUS = [
     {
@@ -621,42 +750,102 @@
       if (ph) el.setAttribute('placeholder', ph);
     });
 
-    executeSearch();
+    const input = document.getElementById('search-input');
+    if (input && input.value.trim()) {
+      executeSearch(false);
+    }
   };
+
+  function clearSearch() {
+    const input = document.getElementById('search-input');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('search-clear');
+    if (clearBtn) clearBtn.style.display = 'none';
+    const dd = document.getElementById('suggestions-dropdown');
+    if (dd) dd.style.display = 'none';
+    const resultsWrapper = document.getElementById('results-wrapper');
+    if (resultsWrapper) resultsWrapper.style.display = 'none';
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) mainContent.classList.remove('has-results');
+    const resultsContainer = document.getElementById('search-results');
+    if (resultsContainer) resultsContainer.innerHTML = '';
+    const knowledgeSidebar = document.getElementById('knowledge-sidebar');
+    if (knowledgeSidebar) knowledgeSidebar.style.display = 'none';
+
+    // Clear URL param if present
+    const currentUrl = new URL(window.location);
+    if (currentUrl.searchParams.has('q')) {
+      currentUrl.searchParams.delete('q');
+      history.replaceState({}, '', currentUrl.pathname + (currentUrl.hash || ''));
+    }
+  }
 
   // --- High-Performance Progressive Search Engine ---
   let activeSearchId = 0;
 
-  async function executeSearch() {
+  async function executeSearch(isLucky = false) {
     const input = document.getElementById('search-input');
     const query = input ? input.value.trim() : '';
-    const clearBtn = document.getElementById('search-clear');
-    const searchId = ++activeSearchId;
+    const dd = document.getElementById('suggestions-dropdown');
+    if (dd) dd.style.display = 'none';
 
-    if (clearBtn) {
-      clearBtn.style.display = query ? 'flex' : 'none';
+    if (!query) {
+      clearSearch();
+      return;
+    }
+
+    const clearBtn = document.getElementById('search-clear');
+    if (clearBtn) clearBtn.style.display = 'flex';
+
+    const resultsWrapper = document.getElementById('results-wrapper');
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) mainContent.classList.add('has-results');
+    if (resultsWrapper) resultsWrapper.style.display = 'block';
+
+    // Update query in URL so search states are bookmarkable & shareable
+    const currentUrl = new URL(window.location);
+    if (currentUrl.searchParams.get('q') !== query) {
+      currentUrl.searchParams.set('q', query);
+      history.pushState({ q: query }, '', currentUrl);
     }
 
     const startTime = performance.now();
+    const searchId = ++activeSearchId;
+
+    // Direct domain navigation detection (e.g. radiosiegen.de, ikea.com, thejocraft.de)
+    const directHit = detectDirectDomain(query);
 
     // 1. Instant local BM25 search over database.json + private bookmarks (< 1 ms)
     const localHits = state.engine.search(query);
     const localElapsed = performance.now() - startTime;
 
-    // Phase 1: Render local results IMMEDIATELY (Instant sub-millisecond response)
-    renderSearchResults(localHits, [], null, query, localElapsed);
+    // If "Auf gut Glück!" / Lucky search requested:
+    if (isLucky) {
+      if (directHit) {
+        window.location.href = directHit.url;
+        return;
+      }
+      if (localHits.length > 0 && localHits[0].score >= 1.0) {
+        window.location.href = localHits[0].doc.url;
+        return;
+      }
+    }
 
-    if (!query) return;
+    // Phase 1: Render local results + direct domain hit IMMEDIATELY (< 1 ms)
+    const initialHits = directHit ? [directHit] : [];
+    renderSearchResults(localHits, initialHits, null, query, localElapsed);
 
     // Phase 2: Asynchronous Non-Blocking Live Web Search (< 400 ms)
-    enrichLiveResults(query, localHits, startTime, searchId);
+    enrichLiveResults(query, localHits, directHit, startTime, searchId, isLucky);
   }
 
-  async function enrichLiveResults(query, localHits, startTime, searchId) {
+  async function enrichLiveResults(query, localHits, directHit, startTime, searchId, isLucky = false) {
     try {
-      const [wikiHits, officialSite, hnItems, braveHits] = await Promise.all([
+      const [wikiHits, officialSite, extLinks, ddgHits, hnItems, braveHits] = await Promise.all([
         fetchWikipediaOpen(query, state.lang),
         fetchWikidataOfficial(query, state.lang),
+        fetchWikipediaExtLinks(query, state.lang),
+        fetchDuckDuckGoInstant(query, state.lang),
         state.settings.srcHN ? fetchHackerNews(query) : Promise.resolve([]),
         state.settings.braveKey ? fetchBraveSearch(query) : Promise.resolve([])
       ]);
@@ -664,18 +853,33 @@
       if (searchId !== activeSearchId) return; // Discard outdated search
 
       // Fetch Knowledge Card for top entity
-      const topEntity = officialSite 
-        ? officialSite.title.split('—')[0].trim() 
+      const topEntity = officialSite
+        ? officialSite.title.split('—')[0].trim()
         : (wikiHits.length > 0 ? wikiHits[0].title : query);
       const card = await fetchWikipediaCard(topEntity, state.lang);
 
       if (searchId !== activeSearchId) return; // Discard outdated search
 
       const liveItems = [];
+      if (directHit) liveItems.push(directHit);
       if (officialSite) liveItems.push(officialSite);
+      if (ddgHits && ddgHits.length) liveItems.push(...ddgHits);
+      if (extLinks && extLinks.length) liveItems.push(...extLinks);
       if (wikiHits && wikiHits.length) liveItems.push(...wikiHits);
       if (hnItems && hnItems.length) liveItems.push(...hnItems);
       if (braveHits && braveHits.length) liveItems.push(...braveHits);
+
+      // If "Auf gut Glück!" / Lucky mode, redirect to top hit now
+      if (isLucky) {
+        if (officialSite) {
+          window.location.href = officialSite.url;
+          return;
+        }
+        if (liveItems.length > 0) {
+          window.location.href = liveItems[0].url;
+          return;
+        }
+      }
 
       const totalElapsed = performance.now() - startTime;
       renderSearchResults(localHits, liveItems, card, query, totalElapsed);
@@ -691,11 +895,10 @@
     const countBadge = document.getElementById('results-count');
     const latencyBadge = document.getElementById('results-latency');
 
-    if (latencyBadge) {
-      latencyBadge.textContent = `⚡ ${elapsed < 1 ? Math.round(elapsed * 1000) + ' µs' : elapsed.toFixed(2) + ' ms'}`;
-    }
+    const elapsedSeconds = (elapsed / 1000).toFixed(3);
+    const formattedSeconds = state.lang === 'de' ? elapsedSeconds.replace('.', ',') : elapsedSeconds;
 
-    // Render Knowledge Card
+    // Render Knowledge Card (Google-style panel on right)
     if (liveCard && knowledgeSidebar && knowledgeCardEl) {
       knowledgeSidebar.style.display = 'block';
       knowledgeCardEl.innerHTML = `
@@ -716,13 +919,15 @@
     const combined = [];
     const seenURLs = new Set();
 
-    // 1. Official website from Wikidata (placed at the very top)
-    const officialItem = liveWebItems.find(i => i.isOfficial);
-    if (officialItem) {
-      const cleanU = sanitizeURL(officialItem.url);
-      seenURLs.add(cleanU);
-      combined.push(officialItem);
-    }
+    // 1. Official website from directDomain or Wikidata (placed at the very top)
+    const officialItems = liveWebItems.filter(i => i.isOfficial);
+    officialItems.forEach(item => {
+      const cleanU = sanitizeURL(item.url);
+      if (!seenURLs.has(cleanU)) {
+        seenURLs.add(cleanU);
+        combined.push(item);
+      }
+    });
 
     // 2. Curated Database & Ecosystem hits
     localHits.forEach(hit => {
@@ -734,7 +939,7 @@
           url: cleanU,
           content: hit.snippet || hit.doc.content,
           category: hit.doc.category,
-          badge: hit.doc.isBookmark ? (state.lang === 'de' ? 'Lesezeichen' : 'Bookmark') : (hit.doc.category === 'ecosystem' ? 'Jeremy Benz Ökosystem' : 'Web Index'),
+          isOfficial: hit.doc.category === 'ecosystem' || hit.score > 2.0,
           isBookmark: hit.doc.isBookmark,
           rawBM: hit.doc.rawBM,
           isPreHighlighted: false
@@ -742,9 +947,9 @@
       }
     });
 
-    // 3. Live Web hits (Wikipedia OpenSearch, Hacker News, Brave)
+    // 3. Live Web hits (Wikidata, Wikipedia ExtLinks, DuckDuckGo, Wikipedia OpenSearch, Hacker News, Brave)
     liveWebItems.forEach(item => {
-      if (item.isOfficial) return; // Already at top
+      if (item.isOfficial) return; // Already placed at top
       const cleanU = sanitizeURL(item.url);
       if (!seenURLs.has(cleanU)) {
         seenURLs.add(cleanU);
@@ -753,7 +958,7 @@
           url: cleanU,
           content: item.content,
           category: 'web',
-          badge: item.badge || 'Web',
+          isOfficial: false,
           isBookmark: false,
           isPreHighlighted: Boolean(item.isPreHighlighted)
         });
@@ -761,9 +966,15 @@
     });
 
     if (countBadge) {
-      countBadge.textContent = state.lang === 'de' 
-        ? `${combined.length} Treffer gefunden` 
-        : `${combined.length} results found`;
+      countBadge.textContent = state.lang === 'de'
+        ? `Ungefähr ${combined.length} Ergebnisse`
+        : `About ${combined.length} results`;
+    }
+
+    if (latencyBadge) {
+      latencyBadge.textContent = state.lang === 'de'
+        ? `(${formattedSeconds} Sekunden)`
+        : `(${formattedSeconds} seconds)`;
     }
 
     if (!resultsContainer) return;
@@ -774,7 +985,7 @@
           <div class="empty-icon">🔍</div>
           <h3>${state.lang === 'de' ? 'Keine Treffer gefunden' : 'No results found'}</h3>
           <p>${state.lang === 'de' 
-            ? `Für die Abfrage <code>${escapeHTML(query)}</code> wurden keine Treffer ermittelt.`
+            ? `Für die Abfrage <code>${escapeHTML(query)}</code> wurden keine Treffer ermittelt.` 
             : `No matching items found for <code>${escapeHTML(query)}</code>.`}
           </p>
         </div>
@@ -786,46 +997,28 @@
 
     resultsContainer.innerHTML = combined.map(item => {
       const snippetHTML = item.isPreHighlighted ? item.content : highlightSnippet(item.content, qTokens);
-      const badgeClass = getBadgeClass(item.badge);
       const domain = getDomain(item.url);
-
-      const bookmarkAction = item.isBookmark
-        ? `<button type="button" class="result-action-btn btn-del-bm" data-bmid="${item.rawBM.id}">🗑️ ${state.lang === 'de' ? 'Löschen' : 'Delete'}</button>`
-        : `<button type="button" class="result-action-btn btn-save-bm" data-title="${escapeHTML(item.title)}" data-url="${escapeHTML(item.url)}">⭐ ${state.lang === 'de' ? 'Lesezeichen' : 'Bookmark'}</button>`;
 
       return `
         <article class="result-item">
           <div class="result-header">
             <span class="result-breadcrumb">${escapeHTML(domain)}</span>
-            <span class="result-badge ${badgeClass}">${escapeHTML(item.badge)}</span>
+            ${item.isOfficial ? `<span class="result-verified-badge">${state.lang === 'de' ? '✓ Offiziell' : '✓ Official'}</span>` : ''}
           </div>
           <a href="${escapeHTML(item.url)}" class="result-title" target="_blank" rel="noopener noreferrer">
             ${escapeHTML(item.title)}
           </a>
           <p class="result-snippet">${snippetHTML}</p>
-          <div class="result-actions">
-            ${bookmarkAction}
-            <button type="button" class="result-action-btn btn-copy-url" data-url="${escapeHTML(item.url)}">📋 ${state.lang === 'de' ? 'Link kopieren' : 'Copy link'}</button>
-            <a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer" class="result-action-btn">↗ ${state.lang === 'de' ? 'Öffnen' : 'Open'}</a>
-          </div>
         </article>
       `;
     }).join('');
   }
 
-  function getBadgeClass(badge) {
-    if (badge.includes('Offiziell') || badge.includes('Official')) return 'badge-official';
-    if (badge.includes('Ökosystem') || badge.includes('Ecosystem')) return 'badge-ecosystem';
-    if (badge.includes('Wikipedia')) return 'badge-wiki';
-    if (badge.includes('Hacker News')) return 'badge-hn';
-    if (badge.includes('Lesezeichen') || badge.includes('Bookmark')) return 'badge-private';
-    return 'badge-web';
-  }
-
   function getDomain(urlStr) {
     try {
       const u = new URL(urlStr);
-      return u.hostname + (u.pathname !== '/' ? u.pathname : '');
+      const pathPart = u.pathname && u.pathname !== '/' ? ' › ' + u.pathname.replace(/^\/|\/$/g, '').split('/').join(' › ') : '';
+      return (u.hostname.replace(/^www\./, '')) + pathPart;
     } catch (e) {
       return urlStr;
     }
@@ -915,7 +1108,7 @@
         input.value = item.getAttribute('data-val');
         dropdown.style.display = 'none';
         input.focus();
-        executeSearch();
+        executeSearch(false);
       }
     });
 
@@ -932,58 +1125,86 @@
     const clearBtn = document.getElementById('search-clear');
     const themeBtn = document.getElementById('btn-theme-toggle');
 
-    let debounceTimer = null;
     if (input) {
       input.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          executeSearch();
-        }, 120);
+        const val = input.value.trim();
+        if (clearBtn) {
+          clearBtn.style.display = val ? 'flex' : 'none';
+        }
+        if (!val) {
+          clearSearch();
+        }
       });
 
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
-          clearTimeout(debounceTimer);
+          e.preventDefault();
           const dd = document.getElementById('suggestions-dropdown');
           if (dd) dd.style.display = 'none';
-          executeSearch();
+          executeSearch(false);
         }
       });
     }
 
     const enterBtn = document.getElementById('search-enter-btn');
     const searchForm = document.getElementById('search-form');
+    const heroSearchBtn = document.getElementById('btn-hero-search');
+    const heroLuckyBtn = document.getElementById('btn-hero-lucky');
 
     if (enterBtn) {
       enterBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        clearTimeout(debounceTimer);
         const dd = document.getElementById('suggestions-dropdown');
         if (dd) dd.style.display = 'none';
-        executeSearch();
+        executeSearch(false);
       });
     }
 
     if (searchForm) {
       searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        clearTimeout(debounceTimer);
         const dd = document.getElementById('suggestions-dropdown');
         if (dd) dd.style.display = 'none';
-        executeSearch();
+        executeSearch(false);
+      });
+    }
+
+    if (heroSearchBtn) {
+      heroSearchBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const dd = document.getElementById('suggestions-dropdown');
+        if (dd) dd.style.display = 'none';
+        executeSearch(false);
+      });
+    }
+
+    if (heroLuckyBtn) {
+      heroLuckyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const dd = document.getElementById('suggestions-dropdown');
+        if (dd) dd.style.display = 'none';
+        executeSearch(true);
       });
     }
 
     if (clearBtn && input) {
       clearBtn.addEventListener('click', () => {
-        input.value = '';
-        clearBtn.style.display = 'none';
-        const dd = document.getElementById('suggestions-dropdown');
-        if (dd) dd.style.display = 'none';
+        clearSearch();
         input.focus();
-        executeSearch();
       });
     }
+
+    // Browser back/forward navigation
+    window.addEventListener('popstate', () => {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('q');
+      if (q && input) {
+        input.value = q;
+        executeSearch(false);
+      } else {
+        clearSearch();
+      }
+    });
 
     // Theme Toggle
     if (themeBtn) {
@@ -1050,7 +1271,8 @@
           if (confirm(state.lang === 'de' ? 'Lesezeichen wirklich entfernen?' : 'Delete bookmark?')) {
             await idbDeleteBookmark(bmid);
             await loadBookmarks();
-            executeSearch();
+            const inp = document.getElementById('search-input');
+            if (inp && inp.value.trim()) executeSearch(false);
           }
         }
       });
@@ -1115,7 +1337,8 @@
         if (lang !== state.lang) {
           window.setLang(lang);
         } else {
-          executeSearch();
+          const inp = document.getElementById('search-input');
+          if (inp && inp.value.trim()) executeSearch(false);
         }
 
         close();
@@ -1163,7 +1386,8 @@
         bmForm.reset();
         closeAdd();
         await loadBookmarks();
-        executeSearch();
+        const inp = document.getElementById('search-input');
+        if (inp && inp.value.trim()) executeSearch(false);
       });
     }
 
@@ -1215,7 +1439,8 @@
           }
           closeSync();
           await loadBookmarks();
-          executeSearch();
+          const inp = document.getElementById('search-input');
+          if (inp && inp.value.trim()) executeSearch(false);
           alert(state.lang === 'de' ? `✓ ${parsed.length} Lesezeichen importiert!` : `✓ ${parsed.length} bookmarks imported!`);
         } catch (err) {
           alert((state.lang === 'de' ? 'Import fehlgeschlagen: ' : 'Import failed: ') + err.message);
@@ -1245,7 +1470,15 @@
 
     await loadDatabase();
     await loadBookmarks();
-    executeSearch();
+
+    // Check if query is in URL (e.g. user reloaded or arrived with ?q=...)
+    const params = new URLSearchParams(window.location.search);
+    const initialQuery = params.get('q');
+    if (initialQuery) {
+      const input = document.getElementById('search-input');
+      if (input) input.value = initialQuery;
+      executeSearch(false);
+    }
   });
 
 })();
