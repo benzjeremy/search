@@ -300,6 +300,7 @@
       srcWiki: localStorage.getItem('search_src_wiki') !== 'false',
       srcDDG: localStorage.getItem('search_src_ddg') !== 'false',
       srcHN: localStorage.getItem('search_src_hn') !== 'false',
+      safeSearch: localStorage.getItem('search_safesearch') !== 'false',
       stripTracking: localStorage.getItem('search_strip_tracking') !== 'false',
       braveKey: localStorage.getItem('search_brave_key') || '',
       searxngURL: localStorage.getItem('search_searxng_url') || ''
@@ -1301,6 +1302,8 @@
         document.getElementById('setting-src-wiki').checked = state.settings.srcWiki;
         document.getElementById('setting-src-ddg').checked = state.settings.srcDDG;
         document.getElementById('setting-src-hn').checked = state.settings.srcHN;
+        const sfEl = document.getElementById('setting-safesearch');
+        if (sfEl) sfEl.checked = state.settings.safeSearch;
         document.getElementById('setting-strip-tracking').checked = state.settings.stripTracking;
         document.getElementById('setting-brave-key').value = state.settings.braveKey;
         document.getElementById('setting-searxng-url').value = state.settings.searxngURL;
@@ -1319,6 +1322,8 @@
         const srcWiki = document.getElementById('setting-src-wiki').checked;
         const srcDDG = document.getElementById('setting-src-ddg').checked;
         const srcHN = document.getElementById('setting-src-hn').checked;
+        const sfEl = document.getElementById('setting-safesearch');
+        const safeSearch = sfEl ? sfEl.checked : true;
         const stripTracking = document.getElementById('setting-strip-tracking').checked;
         const braveKey = document.getElementById('setting-brave-key').value.trim();
         const searxngURL = document.getElementById('setting-searxng-url').value.trim();
@@ -1326,10 +1331,11 @@
         state.theme = theme;
         applyTheme(theme);
 
-        state.settings = { srcWiki, srcDDG, srcHN, stripTracking, braveKey, searxngURL };
+        state.settings = { srcWiki, srcDDG, srcHN, safeSearch, stripTracking, braveKey, searxngURL };
         localStorage.setItem('search_src_wiki', srcWiki);
         localStorage.setItem('search_src_ddg', srcDDG);
         localStorage.setItem('search_src_hn', srcHN);
+        localStorage.setItem('search_safesearch', safeSearch);
         localStorage.setItem('search_strip_tracking', stripTracking);
         localStorage.setItem('search_brave_key', braveKey);
         localStorage.setItem('search_searxng_url', searxngURL);

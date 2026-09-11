@@ -856,10 +856,11 @@ html[data-theme="dark"] .result-snippet mark {
   box-shadow: var(--shadow-modal);
   width: 100%;
   max-width: 540px;
-  max-height: 90vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 .modal-header {
@@ -868,6 +869,7 @@ html[data-theme="dark"] .result-snippet mark {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .modal-title {
@@ -892,10 +894,13 @@ html[data-theme="dark"] .result-snippet mark {
 .modal-body {
   padding: 20px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 20px;
   text-align: left;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .settings-group {
@@ -986,13 +991,17 @@ html[data-theme="dark"] .result-snippet mark {
 }
 
 .modal-footer {
-  padding: 12px 20px;
+  padding: 14px 20px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
   background: var(--bg-surface);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .btn-cancel {
