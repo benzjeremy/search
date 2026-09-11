@@ -254,19 +254,101 @@
     }
   }
 
+  // --- IndexedDB Local Bookmark Vault ---
+  const DB_NAME = 'JeremyBenz_Search_DB';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'bookmarks';
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function idbGetAllBookmarks() {
+    try {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    } catch(err) {
+      console.warn('IndexedDB not accessible:', err);
+      return [];
+    }
+  }
+
+  async function idbSaveBookmark(bm) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.put(bm);
+      req.onsuccess = () => resolve(bm);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function idbDeleteBookmark(id) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.delete(id);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
   // --- UI Controller ---
   const engine = new ClientBM25Engine();
-  engine.indexCorpus(CORPUS);
-
   let activeCategory = '';
+  let privateModeActive = localStorage.getItem('search_private_mode') === 'true';
+  let privateBookmarks = [];
 
-  document.addEventListener('DOMContentLoaded', () => {
+  function reindexCorpus() {
+    let combined = [...CORPUS];
+    if (privateModeActive) {
+      const converted = privateBookmarks.map(bm => ({
+        id: 'bm-' + bm.id,
+        title: bm.title,
+        url: bm.url,
+        category: 'private',
+        tags: ['privat', 'lesezeichen', ...(bm.tags || [])],
+        content: `${bm.title} ${bm.url} ${bm.notes || ''}`,
+        isPrivate: true,
+        rawBM: bm
+      }));
+      combined = [...combined, ...converted];
+    }
+    engine.indexCorpus(combined);
+    executeSearch();
+  }
+
+  async function reloadPrivateBookmarks() {
+    privateBookmarks = await idbGetAllBookmarks();
+    reindexCorpus();
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
     initSearchUI();
     initMobileNav();
     initKeyboardShortcuts();
     initQuickQueries();
     initCopyButtons();
-    executeSearch(); // Initial render
+    initPrivateModeUI();
+    await reloadPrivateBookmarks();
   });
 
   function initSearchUI() {
@@ -337,21 +419,30 @@
     resultsContainer.innerHTML = results.map(res => {
       const highlightedSnippet = highlightSnippet(res.snippet, query ? tokenize(query) : []);
       const tagsHTML = res.doc.tags.map(t => `<span class="res-tag">#${escapeHTML(t)}</span>`).join(' ');
+      const privateBadge = res.doc.isPrivate ? `<span class="p-badge-private">🔒 Privat / Lesezeichen</span>` : '';
+      const privateClass = res.doc.isPrivate ? ' is-private' : '';
+      const deleteBtn = res.doc.isPrivate ? `<button type="button" class="btn-delete-bm" data-bmid="${res.doc.rawBM.id}" title="Lesezeichen löschen">🗑️ Löschen</button>` : '';
 
       return `
-        <article class="search-result-card">
+        <article class="search-result-card${privateClass}">
           <div class="card-top">
-            <a href="${escapeHTML(res.doc.url)}" class="result-title" target="_blank" rel="noopener">
-              ${escapeHTML(res.doc.title)}
-              <svg class="external-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-            </a>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <a href="${escapeHTML(res.doc.url)}" class="result-title" target="_blank" rel="noopener">
+                ${escapeHTML(res.doc.title)}
+                <svg class="external-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
+              ${privateBadge}
+            </div>
             <span class="score-pill" title="Okapi BM25 Ranking Score">BM25: ${res.score.toFixed(2)}</span>
           </div>
           <div class="result-url">${escapeHTML(res.doc.url)}</div>
           <p class="result-snippet">${highlightedSnippet}</p>
           <div class="card-meta">
             <div class="tags-container">${tagsHTML}</div>
-            <a href="${escapeHTML(res.doc.url)}" target="_blank" rel="noopener" class="direct-link-btn">Öffnen →</a>
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${deleteBtn}
+              <a href="${escapeHTML(res.doc.url)}" target="_blank" rel="noopener" class="direct-link-btn">Öffnen →</a>
+            </div>
           </div>
         </article>
       `;
@@ -454,6 +545,153 @@
         toggleBtn.innerHTML = '☰';
       }
     });
+  }
+
+  function initPrivateModeUI() {
+    const toggleBtn = document.getElementById('btn-private-mode');
+    const statusText = document.getElementById('private-mode-status');
+
+    function updateToggleUI() {
+      if (!toggleBtn || !statusText) return;
+      toggleBtn.classList.toggle('active', privateModeActive);
+      statusText.textContent = privateModeActive ? 'Aktiv' : 'Inaktiv';
+      localStorage.setItem('search_private_mode', privateModeActive ? 'true' : 'false');
+    }
+
+    if (toggleBtn) {
+      updateToggleUI();
+      toggleBtn.addEventListener('click', () => {
+        privateModeActive = !privateModeActive;
+        updateToggleUI();
+        reindexCorpus();
+      });
+    }
+
+    // Modal 1: Add Bookmark
+    const bmModal = document.getElementById('bm-modal');
+    const openAddBtn = document.getElementById('btn-open-add-bm');
+    const closeAddBtn = document.getElementById('bm-modal-close');
+    const cancelAddBtn = document.getElementById('bm-cancel-btn');
+    const bmForm = document.getElementById('bm-form');
+
+    if (openAddBtn && bmModal) {
+      openAddBtn.addEventListener('click', () => {
+        bmModal.classList.add('open');
+        const titleInput = document.getElementById('bm-title');
+        if (titleInput) titleInput.focus();
+      });
+    }
+    const closeBmModal = () => { if (bmModal) bmModal.classList.remove('open'); };
+    if (closeAddBtn) closeAddBtn.addEventListener('click', closeBmModal);
+    if (cancelAddBtn) cancelAddBtn.addEventListener('click', closeBmModal);
+
+    if (bmForm) {
+      bmForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('bm-title').value.trim();
+        const url = document.getElementById('bm-url').value.trim();
+        const tagsRaw = document.getElementById('bm-tags').value.trim();
+        const notes = document.getElementById('bm-notes').value.trim();
+
+        const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const bm = {
+          id: 'bm_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+          title: title || url,
+          url,
+          tags,
+          notes,
+          createdAt: new Date().toISOString()
+        };
+
+        await idbSaveBookmark(bm);
+        bmForm.reset();
+        closeBmModal();
+
+        if (!privateModeActive) {
+          privateModeActive = true;
+          updateToggleUI();
+        }
+        await reloadPrivateBookmarks();
+      });
+    }
+
+    // Event delegation for delete buttons in search results
+    const resultsContainer = document.getElementById('search-results');
+    if (resultsContainer) {
+      resultsContainer.addEventListener('click', async (e) => {
+        const delBtn = e.target.closest('.btn-delete-bm');
+        if (delBtn) {
+          const bmid = delBtn.getAttribute('data-bmid');
+          if (bmid && confirm('Möchtest du dieses private Lesezeichen wirklich löschen?')) {
+            await idbDeleteBookmark(bmid);
+            await reloadPrivateBookmarks();
+          }
+        }
+      });
+    }
+
+    // Modal 2: Sync / Export / Import
+    const syncModal = document.getElementById('sync-modal');
+    const openSyncBtn = document.getElementById('btn-open-sync-bm');
+    const closeSyncBtn = document.getElementById('sync-modal-close');
+    const exportBtn = document.getElementById('btn-export-json');
+    const importBtn = document.getElementById('btn-import-json');
+    const jsonArea = document.getElementById('sync-json-area');
+
+    if (openSyncBtn && syncModal) {
+      openSyncBtn.addEventListener('click', () => {
+        syncModal.classList.add('open');
+        if (jsonArea) {
+          jsonArea.value = JSON.stringify(privateBookmarks, null, 2);
+        }
+      });
+    }
+    const closeSync = () => { if (syncModal) syncModal.classList.remove('open'); };
+    if (closeSyncBtn) closeSyncBtn.addEventListener('click', closeSync);
+
+    if (exportBtn && jsonArea) {
+      exportBtn.addEventListener('click', () => {
+        jsonArea.value = JSON.stringify(privateBookmarks, null, 2);
+        navigator.clipboard.writeText(jsonArea.value).then(() => {
+          const orig = exportBtn.textContent;
+          exportBtn.textContent = '✓ Kopiert!';
+          setTimeout(() => { exportBtn.textContent = orig; }, 2000);
+        });
+      });
+    }
+
+    if (importBtn && jsonArea) {
+      importBtn.addEventListener('click', async () => {
+        try {
+          const parsed = JSON.parse(jsonArea.value.trim());
+          if (!Array.isArray(parsed)) {
+            alert('Ungültiges Format: JSON muss ein Array von Lesezeichen sein.');
+            return;
+          }
+          for (const item of parsed) {
+            if (item.url) {
+              await idbSaveBookmark({
+                id: item.id || ('bm_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5)),
+                title: item.title || item.url,
+                url: item.url,
+                tags: item.tags || [],
+                notes: item.notes || '',
+                createdAt: item.createdAt || new Date().toISOString()
+              });
+            }
+          }
+          closeSync();
+          if (!privateModeActive) {
+            privateModeActive = true;
+            updateToggleUI();
+          }
+          await reloadPrivateBookmarks();
+          alert(`✓ ${parsed.length} Lesezeichen erfolgreich importiert!`);
+        } catch(err) {
+          alert('Fehler beim Importieren: ' + err.message);
+        }
+      });
+    }
   }
 
   // Language switch
