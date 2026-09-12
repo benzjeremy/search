@@ -4,13 +4,19 @@
 
 **High-Performance Inverted Full-Text Index · BM25 Ranking · Typo Tolerance · Local-First Daemon**
 
-[![Release](https://img.shields.io/badge/release-v1.1-38bdf8?style=flat-square)](https://github.com/benzjeremy/search/releases)
+[![Release](https://img.shields.io/badge/release-v1.1%20[Pre--Release]-38bdf8?style=flat-square)](https://github.com/benzjeremy/search/releases)
+[![Status: Pre-Release](https://img.shields.io/badge/status-pre--release%20%2F%20WIP-orange.svg?style=flat-square)](https://github.com/benzjeremy/search)
 [![Go Version](https://img.shields.io/badge/go-1.22+-00add8?style=flat-square&logo=go)](https://golang.org)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](https://github.com/benzjeremy/search/blob/main/LICENSE)
 [![Zero Telemetry](https://img.shields.io/badge/telemetry-zero-success?style=flat-square)](https://github.com/benzjeremy/search)
 [![Website](https://img.shields.io/badge/showcase-web-purple?style=flat-square)](https://benzjeremy.github.io/search/)
 
 </div>
+
+> [!IMPORTANT]
+> ### 🚧 Pre-Release / Active Development Notice
+> **This software is not yet finished and is under active development.**  
+> All releases, binaries, and API formats are **Pre-Releases** (Work in Progress), even if released under standard tags. Full-text indexing, BM25 tuning, and crawler integration are undergoing continuous updates and optimization.
 
 ---
 
