@@ -14,36 +14,36 @@
 
 ---
 
-## 📖 Über das Projekt
+## 📖 About the Project
 
-`search` ist eine eigenständige, speichereffiziente und datenschutzorientierte Suchmaschine, entwickelt von **Jeremy Benz** (@benzjeremy). Entwickelt für lokale Dateisysteme, Dokumentenarchive und das gesamte Jeremy-Benz-Ökosystem.
+`search` is an autonomous, memory-efficient, and privacy-first search engine engineered by **Jeremy Benz** (@benzjeremy). Designed for local file systems, document archives, and the broader Jeremy Benz software ecosystem.
 
-Im Gegensatz zu monolithischen Suchservern (Elasticsearch, Meilisearch) mit schwerem Java-/Node-Overhead startet `search` in unter **5 Millisekunden**, verbraucht im Leerlauf unter **8 MB RAM** und liefert BM25-gewertete Suchergebnisse typischerweise in unter **100 Mikrosekunden** ($\mu s$).
+Unlike monolithic search clusters (Elasticsearch, Meilisearch) requiring massive Java or Node runtimes, `search` starts up in under **5 milliseconds**, consumes less than **8 MB RAM** at idle, and delivers BM25-ranked query matches typically in under **100 microseconds** ($\mu s$).
 
-### 🚀 Kern-Features
+### 🚀 Core Features
 
-- **Invertierter Volltext-Index & BM25-Ranking**: Exakte Implementierung der Okapi BM25-Formel ($k_1 = 1.2$, $b = 0.75$) mit dynamischer IDF-Dämpfung und Title-/Tag-Boosting.
-- **Multilinguale Tokenisierung**: Intelligente Bereinigung, Unicode-Wortgrenzen und Stopwort-Filterung für Deutsch und Englisch.
-- **Tippfehler-Toleranz (Fuzzy Matching)**: Schneller Levenshtein-Distanz-Fallback für vertippte Begriffe.
+- **Inverted Full-Text Index & BM25 Ranking**: Exact implementation of the Okapi BM25 formula ($k_1 = 1.2$, $b = 0.75$) with dynamic IDF dampening and title/tag weighting.
+- **Multilingual Tokenization**: Intelligent unicode tokenization, boundary analysis, and stopword filtering for English and German.
+- **Typo Tolerance (Fuzzy Matching)**: Fast Levenshtein distance fallback for misspelled search terms.
 - **Zero Dummy Security & Local-First**:
-  - Bindet standardmäßig ausschließlich an `127.0.0.1` (niemals `0.0.0.0`).
-  - **DNS-Rebinding-Schutz**: Verifiziert den `Host`-Header gegen Rebinding-Angriffe aus dem Browser.
-  - **Kryptografische Token-Authentifizierung**: Sichere API-Tokens (256-bit via `crypto/rand`) mit Constant-Time-Prüfung (`crypto/subtle`).
-- **Doppelter Modus**:
-  - **CLI-Modus**: Schnelle Direktabfrage auf der Kommandozeile (`search -query="docker"`).
-  - **Server-Modus**: Lokaler HTTP-Daemon mit REST-API für Frontend- und Script-Integration.
-- **Web-Showcase**: Interaktives Frontend mit Live-Suche im untis-go / docklite Signature-Design.
+  - Strictly binds to `127.0.0.1` by default (never `0.0.0.0`).
+  - **DNS Rebinding Protection**: Validates the HTTP `Host` header against cross-origin browser attacks.
+  - **Cryptographic Token Authentication**: Secure 256-bit API tokens generated via `crypto/rand` with constant-time validation (`crypto/subtle`).
+- **Dual Operating Modes**:
+  - **CLI Mode**: Instant command-line queries (`search -query="docker"`).
+  - **Server Mode**: Lightweight HTTP daemon providing a REST API for frontend and script automation.
+- **Web Showcase**: Interactive frontend featuring live search in signature glassmorphic design.
 
 ---
 
-## 🛠️ Schnellstart & Installation
+## 🛠️ Quick Start & Installation
 
-### Option 1: Mit Go installieren
+### Option 1: Install via Go
 ```bash
 go install github.com/benzjeremy/search/cmd/search@latest
 ```
 
-### Option 2: Aus Quellcode kompilieren
+### Option 2: Build from Source
 ```bash
 git clone https://github.com/benzjeremy/search.git
 cd search
@@ -52,35 +52,35 @@ make build
 
 ---
 
-## 💻 Benutzung
+## 💻 Usage
 
-### 1. Direktabfrage über CLI
+### 1. Direct CLI Query
 ```bash
-# Suche nach Begriffen im Ökosystem
+# Query keywords across the ecosystem
 ./bin/search -query="docklite"
 
-# Suche mit Tag-Filter
+# Query with tag filter
 ./bin/search -query="desktop" -tag="go"
 
-# Lokales Verzeichnis indizieren und durchsuchen
-./bin/search -dir="/home/user/Dokumente" -query="rechnung"
+# Index local folder and execute query
+./bin/search -dir="/home/user/Documents" -query="invoice"
 
-# Web-Ressource crawlen und direkt exportieren (v1.1)
+# Crawl web resource and export index (v1.1)
 ./bin/search -crawl-url="https://go.dev/doc/" -export="index.json"
 
-# Curated Whitelist crawlen und Index als JSON exportieren (v1.1)
+# Crawl curated whitelist and export index as JSON (v1.1)
 ./bin/search -crawl-whitelist -export="index.json"
 
-# Vorkalkulierten Index importieren und durchsuchen (v1.1)
+# Import pre-calculated index and query (v1.1)
 ./bin/search -import="index.json" -query="concurrency"
 ```
 
-### 2. Als lokaler HTTP-Daemon starten
+### 2. Run as Local HTTP Daemon
 ```bash
-./bin/search -port=8080 -dir="/home/user/Projekte"
+./bin/search -port=8080 -dir="/home/user/Projects"
 ```
 
-Ausgabe:
+Console output:
 ```text
 🚀 search v1.0 Engine Ready!
 📊 Indexed Documents: 42 | Terms: 1350 | Words: 8420
@@ -90,23 +90,23 @@ Ausgabe:
 
 ---
 
-## 📡 REST-API Endpunkte
+## 📡 REST API Endpoints
 
-Alle Schnittstellen binden strikt an `127.0.0.1`.
+All endpoints bind strictly to `127.0.0.1`.
 
-| Methode | Pfad | Authentifizierung | Beschreibung |
+| Method | Path | Authentication | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/health` | Keine | Liveness & Version-Check |
-| `GET` | `/api/search?q=...&tag=...&limit=...` | Keine | BM25-Volltextsuche mit Snippets |
-| `GET` | `/api/stats` | Keine | Engine- & Speicher-Telemetrie |
-| `POST` | `/api/index` | `Bearer <Token>` | Neues Dokument dynamisch indizieren |
+| `GET` | `/health` | None | Liveness & version check |
+| `GET` | `/api/search?q=...&tag=...&limit=...` | None | BM25 full-text search with match snippets |
+| `GET` | `/api/stats` | None | Engine and memory telemetry |
+| `POST` | `/api/index` | `Bearer <Token>` | Dynamically index a new document |
 
-### Beispiel: Suche via `curl`
+### Example: Query via `curl`
 ```bash
 curl "http://127.0.0.1:8080/api/search?q=docker"
 ```
 
-Antwort:
+Response:
 ```json
 {
   "query": "docker",
@@ -122,7 +122,7 @@ Antwort:
         "tags": ["go", "docker", "devops", "astro"]
       },
       "score": 11.64,
-      "snippet": "Radikal schlanke Portainer-Alternative in Go und Astro...",
+      "snippet": "Radically lightweight Portainer alternative in Go and Astro...",
       "matches": ["docker"]
     }
   ]
@@ -139,9 +139,9 @@ make test
 
 ---
 
-## 📜 Lizenz & Autor
+## 📜 License & Author
 
-Dieses Projekt ist freie Open-Source-Software und lizenziert unter der **GNU General Public License, Version 3 (GPL-3.0)**.
+This project is open-source software licensed under the **GNU General Public License, Version 3 (GPL-3.0)**.
 
-- **Autor**: Jeremy Benz ([@benzjeremy](https://github.com/benzjeremy))
-- **Website & Ökosystem**: [benzjeremy.github.io](https://benzjeremy.github.io/)
+- **Author**: Jeremy Benz ([@benzjeremy](https://github.com/benzjeremy))
+- **Website & Ecosystem**: [benzjeremy.github.io](https://benzjeremy.github.io/)
